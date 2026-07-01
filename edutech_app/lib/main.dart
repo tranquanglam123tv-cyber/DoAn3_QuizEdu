@@ -64,7 +64,11 @@ GoRouter _buildRouter(AuthProvider auth) => GoRouter(
     // Shell route — bottom navigation
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => MainShell(navigationShell: shell),
-      branches: [
+      cd /d d:\TQLCNTT2311074\Nam3HK3\QuizEdu
+      git rm --cached quizedu
+      git add .
+      git commit -m "Remove embedded quizedu repo"
+      git push      branches: [
         // Branch 0 — Home (Dashboard)
         StatefulShellBranch(
           routes: [
