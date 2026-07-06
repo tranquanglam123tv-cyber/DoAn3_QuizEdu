@@ -1,7 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Darker green palette
   static const primary = Color(0xFF1B6B3A);
   static const primaryDark = Color(0xFF143D22);
   static const accent = Color(0xFF2E8B5A);
@@ -78,59 +78,47 @@ class AppColors {
   ];
 }
 
-class AppTheme {
-  static Widget glassHeader({
-    required BuildContext context,
-    required String title,
-    String? subtitle,
-    VoidCallback? onBack,
-    Color? iconColor,
-    EdgeInsets padding = const EdgeInsets.fromLTRB(20, 12, 20, 18),
-  }) {
-    final theme = context.read<ThemeProvider>();
-    return Container(
-      width: double.infinity,
-      padding: padding,
-      decoration: BoxDecoration(
-        gradient: theme.gradientPrimary,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-      ),
-      child: Row(
-        children: [
-          if (onBack != null)
-            GestureDetector(
-              onTap: onBack,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                ),
-                child: Icon(Icons.arrow_back_ios_new_rounded, color: iconColor ?? Colors.white, size: 18),
-              ),
+class GlassBox extends StatelessWidget {
+  final Widget child;
+  final double borderRadius;
+  final EdgeInsets? padding;
+  final double blur;
+  final double opacity;
+
+  const GlassBox({
+    super.key,
+    required this.child,
+    this.borderRadius = 20,
+    this.padding,
+    this.blur = 10,
+    this.opacity = 0.7,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: opacity),
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 1.5,
             ),
-          if (onBack != null) const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(title,
-                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, height: 1.2)),
-                if (subtitle != null && subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(subtitle,
-                      style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.3)),
-                ],
-              ],
-            ),
+            boxShadow: AppColors.glassShadow,
           ),
-        ],
+          child: child,
+        ),
       ),
     );
   }
+}
 
+class AppTheme {
   static ThemeData get light => ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(

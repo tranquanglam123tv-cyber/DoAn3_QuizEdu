@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../model/document_model.dart';
 import '../provider/document_provider.dart';
@@ -138,49 +137,62 @@ class _DocumentScreenState extends State<DocumentScreen> {
 
     return Scaffold(
       backgroundColor: theme.background,
-      body: CustomScrollView(
-        slivers: [
-          AppTheme.glassHeader(
-            context: context,
-            title: widget.subjectName,
-            subtitle: '${provider.documents.length} tài liệu',
-            onBack: () => context.pop(),
+      body: Stack(
+        children: [
+          // Background gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.accent.withValues(alpha: 0.15),
+                  theme.background,
+                  Colors.white,
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
           ),
-          if (provider.isUploading)
-            SliverToBoxAdapter(
-              child: LinearProgressIndicator(
-                color: theme.primaryColor,
-                backgroundColor: theme.accentLight,
-              ),
-            ),
-          if (provider.isLoading)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (provider.documents.isEmpty)
-            SliverFillRemaining(
-              child: _EmptyDocuments(onUpload: _pickAndUpload),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (ctx, i) {
-                    final doc = provider.documents[i];
-                    return _DocumentCard(
-                      doc: doc,
-                      onDelete: () => _confirmDelete(provider, doc),
-                      onTap: () => context.push(
-                        '/subjects/${widget.subjectId}/documents/${doc.id}/ai',
-                        extra: doc,
-                      ),
-                    );
-                  },
-                  childCount: provider.documents.length,
+          CustomScrollView(
+            slivers: [
+              _buildAppBar(provider),
+              if (provider.isUploading)
+                SliverToBoxAdapter(
+                  child: LinearProgressIndicator(
+                    color: theme.primaryColor,
+                    backgroundColor: theme.accentLight,
+                  ),
                 ),
-              ),
-            ),
+              if (provider.isLoading)
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (provider.documents.isEmpty)
+                SliverFillRemaining(
+                  child: _EmptyDocuments(onUpload: _pickAndUpload),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) {
+                        final doc = provider.documents[i];
+                        return _DocumentCard(
+                          doc: doc,
+                          onDelete: () => _confirmDelete(provider, doc),
+                          onTap: () => context.push(
+                            '/subjects/${widget.subjectId}/documents/${doc.id}/ai',
+                            extra: doc,
+                          ),
+                        );
+                      },
+                      childCount: provider.documents.length,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
       floatingActionButton: Container(
@@ -201,6 +213,114 @@ class _DocumentScreenState extends State<DocumentScreen> {
           label: Text(
             provider.isUploading ? 'Đang tải...' : 'Upload tài liệu',
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppBar(DocumentProvider provider) {
+    final theme = context.watch<ThemeProvider>();
+    return SliverAppBar(
+      expandedHeight: 160,
+      pinned: true,
+      stretch: true,
+      backgroundColor: theme.primaryColor,
+      foregroundColor: Colors.white,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+        onPressed: () => context.pop(),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        stretchModes: const [StretchMode.zoomBackground],
+        collapseMode: CollapseMode.pin,
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: theme.gradientPrimary,
+          ),
+          child: Stack(
+            children: [
+              // Glass overlay effects
+              Positioned(
+                top: 40,
+                right: -30,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.1),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 20,
+                left: -40,
+                child: Container(
+                  width: 160,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.08),
+                  ),
+                ),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        widget.subjectName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            '${provider.documents.length} tài liệu',
+                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                          ),
+                          const Spacer(),
+                          // Glass button
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  provider.isUploading ? Icons.hourglass_top_rounded : Icons.add_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  provider.isUploading ? 'Đang tải' : 'Thêm file',
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

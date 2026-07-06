@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -47,124 +48,226 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
     final auth = context.watch<AuthProvider>();
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: MediaQuery.of(context).size.height,
-          ),
-          child: Container(
+      body: Stack(
+        children: [
+          // Background gradient
+          Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [theme.accent, theme.primaryColor],
+                colors: [
+                  theme.primaryColor.withValues(alpha: 0.18),
+                  theme.accent.withValues(alpha: 0.12),
+                  theme.background,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
             ),
-            child: SafeArea(
+          ),
+
+          // Decorative blobs
+          Positioned(
+            top: -60,
+            right: -40,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    theme.primaryColor.withValues(alpha: 0.14),
+                    theme.primaryColor.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -80,
+            left: -60,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    theme.accent.withValues(alpha: 0.1),
+                    theme.accent.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Floating deco icons
+          Positioned(
+            top: size.height * 0.08,
+            left: 24,
+            child: _DecoIcon(icon: Icons.auto_stories_rounded, color: theme.warning, size: 20),
+          ),
+          Positioned(
+            top: size.height * 0.18,
+            right: 20,
+            child: _DecoIcon(icon: Icons.calculate_rounded, color: theme.accent, size: 18),
+          ),
+          Positioned(
+            bottom: size.height * 0.42,
+            left: 18,
+            child: _DecoIcon(icon: Icons.science_rounded, color: theme.primaryColor, size: 16),
+          ),
+          Positioned(
+            bottom: size.height * 0.28,
+            right: 24,
+            child: _DecoIcon(icon: Icons.history_edu_rounded, color: theme.warning, size: 18),
+          ),
+
+          SafeArea(
+            child: SingleChildScrollView(
               child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+                  SizedBox(height: size.height * 0.04),
+
+                  // Logo + brand
+                  SizedBox(
+                    height: size.height * 0.22,
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
+                        _GlassContainer(
+                          borderRadius: 24,
+                          padding: const EdgeInsets.all(18),
                           child: Icon(
                             Icons.school_rounded,
-                            color: Colors.white,
-                            size: 40,
+                            color: theme.primaryColor,
+                            size: 48,
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Tạo tài khoản',
+                        Text(
+                          'QuizEdu',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
+                            color: theme.primaryDark,
+                            fontSize: 30,
                             fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Bắt đầu hành trình học tập của bạn',
-                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Học thông minh, tiến xa hơn',
+                          style: TextStyle(
+                            color: theme.textSecondary,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  Container(
-                    constraints: BoxConstraints(
-                      minHeight: MediaQuery.of(context).size.height * 0.6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.background,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                    ),
-                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+
+                  // Glass form
+                  _GlassContainer(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    borderRadius: 28,
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
                     child: Form(
                       key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Đăng ký',
-                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.textPrimary),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Điền thông tin bên dưới để tạo tài khoản',
-                              style: TextStyle(fontSize: 14, color: theme.textSecondary),
-                            ),
-                          const SizedBox(height: 28),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: theme.primaryColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.person_add_rounded,
+                                  color: theme.primaryColor,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Tạo tài khoản',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.textPrimary,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Bắt đầu hành trình học tập',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: theme.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Name field
                           TextFormField(
                             controller: _nameCtrl,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Họ và tên',
-                              prefixIcon: Icon(Icons.badge_outlined),
+                              prefixIcon: Icon(Icons.badge_outlined, color: theme.textSecondary),
                             ),
                             validator: (v) => v!.isEmpty ? 'Vui lòng nhập họ tên' : null,
                           ),
                           const SizedBox(height: 14),
+
+                          // Email field
                           TextFormField(
                             controller: _emailCtrl,
                             keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Email',
-                              prefixIcon: Icon(Icons.email_outlined),
+                              prefixIcon: Icon(Icons.email_outlined, color: theme.textSecondary),
                             ),
                             validator: (v) => v!.isEmpty ? 'Vui lòng nhập email' : null,
                           ),
                           const SizedBox(height: 14),
+
+                          // Password field
                           TextFormField(
                             controller: _passCtrl,
                             obscureText: _obscure,
                             decoration: InputDecoration(
                               labelText: 'Mật khẩu',
-                              prefixIcon: const Icon(Icons.lock_outline),
+                              prefixIcon: Icon(Icons.lock_outline, color: theme.textSecondary),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                                   size: 20,
+                                  color: theme.textSecondary,
                                 ),
                                 onPressed: () => setState(() => _obscure = !_obscure),
                               ),
                             ),
                             validator: (v) => v!.length < 6 ? 'Mật khẩu tối thiểu 6 ký tự' : null,
                           ),
+
                           if (auth.error != null) ...[
                             const SizedBox(height: 10),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                               decoration: BoxDecoration(
-                                color: theme.danger.withValues(alpha: 0.1),
+                                color: theme.danger.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: theme.danger.withValues(alpha: 0.2)),
                               ),
                               child: Row(
                                 children: [
@@ -181,33 +284,81 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ],
                           const SizedBox(height: 24),
+
+                          // Primary register button
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               onPressed: auth.isLoading ? null : _register,
-                              style: ElevatedButton.styleFrom(backgroundColor: theme.accent),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.primaryColor,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
                               child: auth.isLoading
-                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                  : const Text('Tạo tài khoản'),
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.person_add_rounded, size: 18, color: Colors.white),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Tạo tài khoản',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 12),
+
+                          // Google register button
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton.icon(
                               onPressed: auth.isLoading ? null : _registerWithGoogle,
-                              icon: const Icon(Icons.pets_rounded),
+                              icon: const Icon(Icons.school_rounded),
                               label: const Text('Đăng ký bằng Google'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
+
+                          // Login link
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('Đã có tài khoản?', style: TextStyle(color: theme.textSecondary, fontSize: 14)),
+                              Text(
+                                'Đã có tài khoản?',
+                                style: TextStyle(color: theme.textSecondary, fontSize: 14),
+                              ),
                               TextButton(
                                 onPressed: () => context.go('/login'),
-                                child: const Text('Đăng nhập', style: TextStyle(fontWeight: FontWeight.bold)),
+                                child: Text(
+                                  'Đăng nhập',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.primaryColor,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -215,9 +366,94 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                   ),
+
+                  SizedBox(height: size.height * 0.06),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DecoIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final double size;
+
+  const _DecoIcon({
+    required this.icon,
+    required this.color,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.5),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: color, size: size),
+    );
+  }
+}
+
+class _GlassContainer extends StatelessWidget {
+  final Widget child;
+  final EdgeInsets? margin;
+  final double borderRadius;
+  final EdgeInsets? padding;
+
+  const _GlassContainer({
+    required this.child,
+    this.margin,
+    this.borderRadius = 20,
+    this.padding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
+    return Container(
+      margin: margin,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.72),
+              borderRadius: BorderRadius.circular(borderRadius),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.6),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.primaryColor.withValues(alpha: 0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  blurRadius: 8,
+                  offset: const Offset(-4, -4),
+                ),
+              ],
+            ),
+            child: child,
           ),
         ),
       ),

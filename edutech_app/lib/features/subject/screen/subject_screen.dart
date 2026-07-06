@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -58,16 +59,23 @@ class _SubjectScreenState extends State<SubjectScreen> {
 
     return Scaffold(
       backgroundColor: theme.background,
+      appBar: AppBar(
+        backgroundColor: theme.surface,
+        foregroundColor: theme.textPrimary,
+        elevation: 0,
+        title: const Text('Môn học', style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppTheme.glassHeader(
-            context: context,
-            title: 'Môn học của bạn',
-            subtitle: '${provider.subjects.length} môn học',
-            onBack: () => context.pop(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: _GlassHeader(
+              title: 'Môn học',
+              subtitle: '${provider.subjects.length} môn học',
+              icon: Icons.school_rounded,
+            ),
           ),
-          const SizedBox(height: 16),
           Expanded(
             child: provider.isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -310,6 +318,75 @@ class _CreateSubjectSheetState extends State<_CreateSubjectSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _GlassHeader extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  const _GlassHeader({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: theme.gradientPrimary,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: theme.primaryColor.withValues(alpha: 0.2),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

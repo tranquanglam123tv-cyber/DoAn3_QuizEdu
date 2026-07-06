@@ -25,65 +25,17 @@ class _QuizConfigScreenState extends State<QuizConfigScreen> {
   List<Map<String, dynamic>> _getDifficulties(ThemeProvider theme) => [
     {'value': 'EASY', 'label': 'Dễ', 'sub': 'Kiến thức cơ bản', 'color': theme.success},
     {'value': 'MEDIUM', 'label': 'Trung bình', 'sub': 'Hiểu và áp dụng', 'color': theme.warning},
-    {'value': 'HARD', 'label': 'Khó', 'sub': 'Phân tích và tổng hợp', 'color': theme.danger, 'premium': true},
+    {'value': 'HARD', 'label': 'Khó', 'sub': 'Phân tích và tổng hợp', 'color': theme.danger},
   ];
 
   final _counts = [5, 10, 20, 40];
 
-  void _showPremiumDialog(ThemeProvider theme) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.warning.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.workspace_premium_rounded, color: theme.warning, size: 48),
-            ),
-            const SizedBox(height: 16),
-            const Text('Tính năng Premium', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-              'Bạn cần mua gói Premium để sử dụng tính năng này.\n\nVui lòng liên hệ quản trị viên để được hỗ trợ.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: theme.textSecondary, fontSize: 14),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(backgroundColor: theme.primaryColor),
-                child: const Text('Đã hiểu', style: TextStyle(color: Colors.white)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _onDifficultySelected(String value) {
-    final diff = _getDifficulties(context.read<ThemeProvider>()).firstWhere((d) => d['value'] == value);
-    if (diff['premium'] == true) {
-      _showPremiumDialog(context.read<ThemeProvider>());
-    } else {
-      setState(() => _difficulty = value);
-    }
+    setState(() => _difficulty = value);
   }
 
   void _onCountSelected(int count) {
-    if (count == 20 || count == 40) {
-      _showPremiumDialog(context.read<ThemeProvider>());
-    } else {
-      setState(() => _questionCount = count);
-    }
+    setState(() => _questionCount = count);
   }
 
   Future<void> _generate() async {

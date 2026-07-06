@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../provider/exam_provider.dart';
 import '../../quiz/model/quiz_model.dart';
@@ -21,6 +20,34 @@ class _ExamScreenState extends State<ExamScreen> {
   bool _started = false;
   late int _secondsLeft;
   Timer? _timer;
+
+  int get _secondsPerQuestion => 60;
+
+  void _startTimer() {
+    _secondsLeft = widget.quiz.questions.length * _secondsPerQuestion;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      if (_secondsLeft <= 0) {
+        _timer?.cancel();
+        _submit();
+      } else {
+        setState(() => _secondsLeft--);
+      }
+    });
+  }
+
+  String get _timerText {
+    final m = _secondsLeft ~/ 60;
+    final s = _secondsLeft % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  Color get _timerColor {
+    final theme = context.read<ThemeProvider>();
+    if (_secondsLeft <= 60) return theme.danger;
+    if (_secondsLeft <= 120) return theme.warning;
+    return theme.success;
+  }
 
   @override
   void initState() {
@@ -120,15 +147,132 @@ class _ExamScreenState extends State<ExamScreen> {
 
     return Scaffold(
       backgroundColor: theme.background,
+      appBar: AppBar(
+        backgroundColor: theme.surface,
+        foregroundColor: theme.textPrimary,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${widget.quiz.questionCount} câu • ${widget.quiz.difficulty}',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+            Text('Câu ${_currentIndex + 1} / ${questions.length}',
+                style: TextStyle(fontSize: 12, color: theme.textSecondary)),
+          ],
+        ),
+        actions: [
+          // Timer
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: _timerColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.timer_rounded, size: 14, color: _timerColor),
+                const SizedBox(width: 4),
+                Text(
+                  _timerText,
+                  style: TextStyle(
+                    color: _timerColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: _submit,
+            icon: Icon(Icons.send_rounded, size: 16, color: theme.primaryColor),
+            label: Text('Nộp bài',
+                style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: Column(
         children: [
-          AppTheme.glassHeader(
-            context: context,
-            title: '${widget.quiz.questionCount} câu • ${widget.quiz.difficulty}',
-            subtitle: 'Câu ${_currentIndex + 1} / ${questions.length}',
-            onBack: null,
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+          // Progress bar
+          Container(
+            color: theme.surface,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Column(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: theme.background,
+                    color: theme.primaryColor,
+                    minHeight: 6,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('${provider.selectedAnswers.length}/${questions.length} đã trả lời',
+                        style: TextStyle(color: theme.textSecondary, fontSize: 12)),
+                    // Question dots navigator
+                    Flexible(
+                      child: SizedBox(
+                        height: 26,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          shrinkWrap: true,
+                          itemCount: questions.length,
+                          itemBuilder: (ctx, i) => GestureDetector(
+                            onTap: () => setState(() => _currentIndex = i),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 26,
+                              height: 26,
+                              margin: const EdgeInsets.only(right: 4),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: i == _currentIndex
+                                    ? theme.primaryColor
+                                    : provider.selectedAnswers.containsKey(questions[i].id)
+                                        ? theme.success
+                                        : theme.background,
+                                border: Border.all(
+                                  color: i == _currentIndex
+                                      ? theme.primaryColor
+                                      : provider.selectedAnswers.containsKey(questions[i].id)
+                                          ? theme.success
+                                          : const Color(0xFFDDE2EE),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text('${i + 1}',
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: i == _currentIndex ||
+                                                provider.selectedAnswers.containsKey(questions[i].id)
+                                            ? Colors.white
+                                            : theme.textHint)),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
+
+          // Question + choices
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),

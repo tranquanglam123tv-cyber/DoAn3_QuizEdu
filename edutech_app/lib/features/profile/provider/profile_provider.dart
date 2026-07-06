@@ -13,12 +13,24 @@ class ProfileProvider extends ChangeNotifier {
     success = null;
   }
 
-  Future<bool> updateProfile(AuthProvider auth, String fullName) async {
+  Future<bool> updateProfile(
+    AuthProvider auth,
+    String fullName, {
+    String? avatarUrl,
+    String? gender,
+    DateTime? dateOfBirth,
+  }) async {
     _clear();
     isSaving = true;
     notifyListeners();
     try {
-      final res = await ApiClient.dio.put('/users/profile', data: {'fullName': fullName});
+      final body = <String, dynamic>{'fullName': fullName};
+      if (avatarUrl != null) body['avatarUrl'] = avatarUrl;
+      if (gender != null) body['gender'] = gender;
+      if (dateOfBirth != null) {
+        body['dateOfBirth'] = '${dateOfBirth.year}-${dateOfBirth.month.toString().padLeft(2, '0')}-${dateOfBirth.day.toString().padLeft(2, '0')}';
+      }
+      final res = await ApiClient.dio.put('/users/profile', data: body);
       final updated = res.data['data'];
       if (auth.currentUser != null) {
         auth.updateCurrentUser(fullName: updated['fullName'] ?? fullName);

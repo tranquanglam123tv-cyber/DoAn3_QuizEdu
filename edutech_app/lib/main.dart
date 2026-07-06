@@ -192,8 +192,8 @@ class _MyAppState extends State<MyApp> {
       _router = _buildRouter(auth);
     }
 
-    return MaterialApp.router(
-      title: 'EduTech AI',
+    return       MaterialApp.router(
+      title: 'QuizEdu',
       debugShowCheckedModeBanner: false,
       theme: theme.themeData,
       routerConfig: _router!,
@@ -210,31 +210,23 @@ class _SplashScreen extends StatelessWidget {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(gradient: theme.gradientPrimary),
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Colors.white24, Colors.white10]),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.5),
-                  ),
-                  child: Icon(Icons.school_rounded, color: Colors.white, size: 48),
-                ),
-                const SizedBox(height: 16),
-                const Text('QuizEdu - Học & Thi',
-                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                const Text('Học thông minh, tiến xa hơn',
-                    style: TextStyle(color: Colors.white70, fontSize: 13)),
-                const SizedBox(height: 32),
-                const CircularProgressIndicator(color: Colors.white54, strokeWidth: 2),
-              ],
-            ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.school_rounded, color: Colors.white, size: 64),
+              SizedBox(height: 16),
+              Text('QuizEdu',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold)),
+              SizedBox(height: 6),
+              Text('Học thông minh, tiến xa hơn',
+                  style: TextStyle(color: Colors.white70, fontSize: 13)),
+              SizedBox(height: 32),
+              CircularProgressIndicator(color: Colors.white54, strokeWidth: 2),
+            ],
           ),
         ),
       ),

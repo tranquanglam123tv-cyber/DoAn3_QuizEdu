@@ -79,6 +79,16 @@ class _AIScreenState extends State<AIScreen> {
     final theme = context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: theme.background,
+      appBar: AppBar(
+        backgroundColor: theme.surface,
+        foregroundColor: theme.textPrimary,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text('AI Học tập', style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -99,7 +109,7 @@ class _AIScreenState extends State<AIScreen> {
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.school_rounded, color: Colors.white, size: 22),
+                    child: const Icon(Icons.description_rounded, color: Colors.white, size: 22),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

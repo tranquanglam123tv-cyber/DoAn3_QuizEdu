@@ -104,49 +104,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = context.read<ThemeProvider>();
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.download_rounded, color: theme.primaryColor),
-            const SizedBox(width: 8),
-            const Text('Xuất dữ liệu cá nhân'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Bạn có thể xuất các dữ liệu sau:',
-              style: TextStyle(color: theme.textSecondary),
-            ),
-            const SizedBox(height: 16),
-            _ExportOption(icon: Icons.description_rounded, label: 'Tài liệu của tôi'),
-            _ExportOption(icon: Icons.quiz_rounded, label: 'Bài kiểm tra'),
-            _ExportOption(icon: Icons.history_rounded, label: 'Lịch sử học tập'),
-            _ExportOption(icon: Icons.bar_chart_rounded, label: 'Thống kê'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Đóng'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Yêu cầu xuất dữ liệu đã được gửi!'),
-                  backgroundColor: theme.success,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) {
+          final selected = <String, bool>{
+            'Tài liệu của tôi': true,
+            'Bài kiểm tra': true,
+            'Lịch sử học tập': true,
+            'Thống kê': false,
+          };
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.download_rounded, color: theme.primaryColor, size: 20),
                 ),
-              );
-            },
-            icon: const Icon(Icons.send_rounded, size: 18),
-            label: const Text('Gửi yêu cầu'),
-          ),
-        ],
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Xuất dữ liệu cá nhân',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Chọn dữ liệu bạn muốn xuất:',
+                  style: TextStyle(color: theme.textSecondary, fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                _ExportOption(
+                  icon: Icons.description_rounded,
+                  label: 'Tài liệu của tôi',
+                  selected: selected['Tài liệu của tôi']!,
+                  onChanged: (v) => setState(() => selected['Tài liệu của tôi'] = v ?? false),
+                ),
+                _ExportOption(
+                  icon: Icons.quiz_rounded,
+                  label: 'Bài kiểm tra',
+                  selected: selected['Bài kiểm tra']!,
+                  onChanged: (v) => setState(() => selected['Bài kiểm tra'] = v ?? false),
+                ),
+                _ExportOption(
+                  icon: Icons.history_rounded,
+                  label: 'Lịch sử học tập',
+                  selected: selected['Lịch sử học tập']!,
+                  onChanged: (v) => setState(() => selected['Lịch sử học tập'] = v ?? false),
+                ),
+                _ExportOption(
+                  icon: Icons.bar_chart_rounded,
+                  label: 'Thống kê',
+                  selected: selected['Thống kê']!,
+                  onChanged: (v) => setState(() => selected['Thống kê'] = v ?? false),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Đóng'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Yêu cầu xuất dữ liệu đã được gửi!\nFile sẽ được gửi qua email trong 24h.',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      backgroundColor: theme.success,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.send_rounded, size: 18),
+                label: const Text('Gửi yêu cầu'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -343,7 +388,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: theme.primaryColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.pets_rounded, color: Colors.white, size: 28),
+                  child: const Icon(Icons.school_rounded, color: Colors.white, size: 28),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -449,9 +494,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
-  const _SettingsTile({required this.icon, required this.label, required this.onTap});
+  const _SettingsTile({
+    required this.icon,
+    required this.label,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -490,7 +539,9 @@ class _SettingsTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: theme.textHint),
+                onTap != null
+                    ? Icon(Icons.chevron_right_rounded, color: theme.textHint, size: 22)
+                    : const SizedBox.shrink(),
               ],
             ),
           ),
@@ -503,21 +554,43 @@ class _SettingsTile extends StatelessWidget {
 class _ExportOption extends StatelessWidget {
   final IconData icon;
   final String label;
+  final bool selected;
+  final ValueChanged<bool?>? onChanged;
 
-  const _ExportOption({required this.icon, required this.label});
+  const _ExportOption({
+    required this.icon,
+    required this.label,
+    this.selected = false,
+    this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: theme.primaryColor),
-          const SizedBox(width: 12),
-          Expanded(child: Text(label)),
-          Icon(Icons.check_box_outline_blank_rounded, size: 20, color: theme.textHint),
-        ],
+    return InkWell(
+      onTap: onChanged != null ? () => onChanged!(!selected) : null,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: theme.primaryColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 14, color: theme.textPrimary),
+              ),
+            ),
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: selected
+                  ? Icon(Icons.check_box_rounded, size: 22, color: theme.primaryColor)
+                  : Icon(Icons.check_box_outline_blank_rounded, size: 22, color: theme.textHint),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -528,7 +601,11 @@ class _HelpOption extends StatelessWidget {
   final String label;
   final String value;
 
-  const _HelpOption({required this.icon, required this.label, required this.value});
+  const _HelpOption({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -546,12 +623,25 @@ class _HelpOption extends StatelessWidget {
             child: Icon(icon, size: 18, color: theme.primaryColor),
           ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(fontSize: 12, color: theme.textSecondary)),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 12, color: theme.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),
