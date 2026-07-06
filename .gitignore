@@ -1,0 +1,15 @@
+# Firebase credentials - DO NOT COMMIT
+src/main/resources/firebase-service-account.json
+
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+run_log.txt

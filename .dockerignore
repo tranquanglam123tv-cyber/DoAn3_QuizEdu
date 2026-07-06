@@ -1,0 +1,7 @@
+target/
+*.log
+uploads/
+.git/
+.gitignore
+README.md
+run_log.txt
