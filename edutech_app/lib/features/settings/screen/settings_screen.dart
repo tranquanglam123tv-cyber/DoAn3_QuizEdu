@@ -12,7 +12,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-
   static void _showThemeDialog(BuildContext context) {
     final themeProvider = context.read<ThemeProvider>();
 
@@ -34,7 +33,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: themeProvider.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.palette_rounded, color: themeProvider.primaryColor),
+                    child: Icon(
+                      Icons.palette_rounded,
+                      color: themeProvider.primaryColor,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   const Text(
@@ -61,7 +63,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 itemCount: ThemeProvider.colorOptions.length,
                 itemBuilder: (ctx, i) {
                   final option = ThemeProvider.colorOptions[i];
-                  final isSelected = themeProvider.primaryColor.toARGB32() == option.primary.toARGB32();
+                  final isSelected =
+                      themeProvider.primaryColor.toARGB32() ==
+                      option.primary.toARGB32();
                   return GestureDetector(
                     onTap: () {
                       themeProvider.setPrimaryColor(option.primary);
@@ -86,7 +90,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             : null,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check_rounded, color: Colors.white, size: 28)
+                          ? const Icon(
+                              Icons.check_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            )
                           : null,
                     ),
                   );
@@ -102,18 +110,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   static void _showExportDataDialog(BuildContext context) {
     final theme = context.read<ThemeProvider>();
+    final selected = <String, bool>{
+      'Tài liệu của tôi': true,
+      'Bài kiểm tra': true,
+      'Lịch sử học tập': true,
+      'Thống kê': false,
+    };
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) {
-          final selected = <String, bool>{
-            'Tài liệu của tôi': true,
-            'Bài kiểm tra': true,
-            'Lịch sử học tập': true,
-            'Thống kê': false,
-          };
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             title: Row(
               children: [
                 Container(
@@ -122,7 +132,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: theme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.download_rounded, color: theme.primaryColor, size: 20),
+                  child: Icon(
+                    Icons.download_rounded,
+                    color: theme.primaryColor,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -166,6 +180,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   selected: selected['Thống kê']!,
                   onChanged: (v) => setState(() => selected['Thống kê'] = v ?? false),
                 ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, color: theme.primaryColor, size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Đã chọn ${selected.values.where((v) => v).length} mục để xuất',
+                          style: TextStyle(fontSize: 12, color: theme.primaryColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
             actions: [
@@ -176,10 +210,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(ctx);
+                  final count = selected.values.where((v) => v).length;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Yêu cầu xuất dữ liệu đã được gửi!\nFile sẽ được gửi qua email trong 24h.',
+                        'Yêu cầu xuất $count mục đã được gửi!\nFile sẽ được gửi qua email trong 24h.',
                         style: const TextStyle(fontSize: 13),
                       ),
                       backgroundColor: theme.success,
@@ -203,10 +238,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Row(
             children: [
-              Icon(Icons.notifications_active_rounded, color: theme.primaryColor),
+              Icon(
+                Icons.notifications_active_rounded,
+                color: theme.primaryColor,
+              ),
               const SizedBox(width: 8),
               const Text('Nhắc học'),
             ],
@@ -230,7 +270,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -238,11 +281,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.access_time_rounded, color: theme.primaryColor),
+                      Icon(
+                        Icons.access_time_rounded,
+                        color: theme.primaryColor,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         selectedTime.format(ctx),
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.primaryColor),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: theme.primaryColor,
+                        ),
                       ),
                     ],
                   ),
@@ -266,7 +316,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Đã đặt nhắc học lúc ${selectedTime.format(context)}'),
+                    content: Text(
+                      'Đã đặt nhắc học lúc ${selectedTime.format(context)}',
+                    ),
                     backgroundColor: theme.success,
                   ),
                 );
@@ -325,12 +377,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline_rounded, color: theme.primaryColor, size: 20),
+                  Icon(
+                    Icons.info_outline_rounded,
+                    color: theme.primaryColor,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Đội ngũ hỗ trợ sẵn sàng giúp bạn 24/7',
-                      style: TextStyle(fontSize: 12, color: theme.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.textSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -341,7 +400,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(backgroundColor: theme.primaryColor),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primaryColor,
+            ),
             child: const Text('Đóng', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -362,7 +423,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         foregroundColor: theme.textPrimary,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text('Cài đặt', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Cài đặt',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -388,7 +452,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: theme.primaryColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.school_rounded, color: Colors.white, size: 28),
+                  child: const Icon(
+                    Icons.school_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -408,7 +476,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 4),
                       Text(
                         user?.email ?? '',
-                        style: TextStyle(fontSize: 12, color: theme.textSecondary),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.textSecondary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -460,14 +531,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  title: const Text('Đăng xuất', style: TextStyle(fontWeight: FontWeight.bold)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  title: const Text(
+                    'Đăng xuất',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   content: const Text('Bạn có chắc muốn đăng xuất?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Huỷ')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Huỷ'),
+                    ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(ctx, true),
-                      style: ElevatedButton.styleFrom(backgroundColor: theme.danger),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.danger,
+                      ),
                       child: const Text('Đăng xuất'),
                     ),
                   ],
@@ -496,11 +577,7 @@ class _SettingsTile extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const _SettingsTile({
-    required this.icon,
-    required this.label,
-    this.onTap,
-  });
+  const _SettingsTile({required this.icon, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -515,7 +592,10 @@ class _SettingsTile extends StatelessWidget {
             color: theme.surface,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 8,
+              ),
             ],
           ),
           child: Padding(
@@ -534,13 +614,20 @@ class _SettingsTile extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 onTap != null
-                    ? Icon(Icons.chevron_right_rounded, color: theme.textHint, size: 22)
+                    ? Icon(
+                        Icons.chevron_right_rounded,
+                        color: theme.textHint,
+                        size: 22,
+                      )
                     : const SizedBox.shrink(),
               ],
             ),
@@ -586,8 +673,16 @@ class _ExportOption extends StatelessWidget {
               width: 24,
               height: 24,
               child: selected
-                  ? Icon(Icons.check_box_rounded, size: 22, color: theme.primaryColor)
-                  : Icon(Icons.check_box_outline_blank_rounded, size: 22, color: theme.textHint),
+                  ? Icon(
+                      Icons.check_box_rounded,
+                      size: 22,
+                      color: theme.primaryColor,
+                    )
+                  : Icon(
+                      Icons.check_box_outline_blank_rounded,
+                      size: 22,
+                      color: theme.textHint,
+                    ),
             ),
           ],
         ),
@@ -636,7 +731,10 @@ class _HelpOption extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

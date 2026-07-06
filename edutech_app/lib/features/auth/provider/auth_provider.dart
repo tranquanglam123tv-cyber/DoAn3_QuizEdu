@@ -36,6 +36,9 @@ class AuthProvider extends ChangeNotifier {
         fullName: data['fullName'] ?? '',
         email: data['email'] ?? '',
         role: data['role'] ?? 'STUDENT',
+        avatarUrl: data['avatarUrl'],
+        gender: data['gender'],
+        dateOfBirth: data['dateOfBirth']?.toString(),
       );
     } catch (_) {
       await TokenStorage.delete();
@@ -138,13 +141,16 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateCurrentUser({String? fullName}) {
+  void updateCurrentUser({String? fullName, String? avatarUrl, String? gender, String? dateOfBirth}) {
     if (currentUser == null) return;
     currentUser = AuthModel(
       accessToken: currentUser!.accessToken,
       fullName: fullName ?? currentUser!.fullName,
       email: currentUser!.email,
       role: currentUser!.role,
+      avatarUrl: avatarUrl ?? currentUser!.avatarUrl,
+      gender: gender ?? currentUser!.gender,
+      dateOfBirth: dateOfBirth ?? currentUser!.dateOfBirth,
     );
     notifyListeners();
   }

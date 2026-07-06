@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/provider/auth_provider.dart';
@@ -96,7 +97,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
     final provider = context.read<ProfileProvider>();
-    final ok = await provider.changePassword(_oldPassCtrl.text, _newPassCtrl.text);
+    final ok = await provider.changePassword(
+      _oldPassCtrl.text,
+      _newPassCtrl.text,
+    );
     if (mounted && ok) {
       _oldPassCtrl.clear();
       _newPassCtrl.clear();
@@ -109,10 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     } else if (mounted && provider.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.error!),
-          backgroundColor: theme.danger,
-        ),
+        SnackBar(content: Text(provider.error!), backgroundColor: theme.danger),
       );
     }
   }
@@ -123,10 +124,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Đăng xuất', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Đăng xuất',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: const Text('Bạn có chắc muốn đăng xuất không?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Huỷ')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Huỷ'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: theme.danger),
@@ -155,6 +162,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _pickAvatar() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512, imageQuality: 80);
+    if (image == null) return;
+    final provider = context.read<ProfileProvider>();
+    final auth = context.read<AuthProvider>();
+    final ok = await provider.uploadAvatar(auth, image);
+    if (!mounted) return;
+    final theme = context.read<ThemeProvider>();
+    if (ok) {
+      final updated = provider.uploadedAvatarUrl;
+      if (updated != null) {
+        setState(() => _avatarUrl = updated);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Cập nhật ảnh đại diện thành công!'),
+          backgroundColor: theme.success,
+        ),
+      );
+    } else if (provider.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(provider.error!),
+          backgroundColor: theme.danger,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
@@ -163,7 +200,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = auth.currentUser;
     final name = user?.fullName ?? '';
     final initials = name.trim().isNotEmpty
-        ? name.trim().split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join().toUpperCase()
+        ? name
+              .trim()
+              .split(' ')
+              .map((w) => w.isNotEmpty ? w[0] : '')
+              .take(2)
+              .join()
+              .toUpperCase()
         : 'U';
 
     return Scaffold(
@@ -217,7 +260,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 4),
                       Text(
                         user?.email ?? '',
-                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -226,7 +272,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             title: const Text(
               'Hồ sơ',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           SliverPadding(
@@ -250,22 +299,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: theme.primaryColor.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.person_rounded, color: theme.primaryColor, size: 28),
+                          child: Icon(
+                            Icons.person_rounded,
+                            color: theme.primaryColor,
+                            size: 28,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            _avatarUrl != null ? 'Đã chọn ảnh mới' : 'Chưa có ảnh',
-                            style: TextStyle(fontSize: 13, color: theme.textSecondary),
+                            _avatarUrl != null
+                                ? 'Đã chọn ảnh mới'
+                                : 'Chưa có ảnh',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.textSecondary,
+                            ),
                           ),
                         ),
                         TextButton(
-                          onPressed: () {
-                            setState(() => _avatarUrl = 'avatar_${DateTime.now().millisecondsSinceEpoch}');
-                          },
+                          onPressed: _pickAvatar,
                           child: Text(
                             _avatarUrl != null ? 'Đổi ảnh' : 'Chọn ảnh',
-                            style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: theme.primaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -278,7 +337,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     TextField(
                       controller: _nameCtrl,
                       decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.badge_outlined, color: theme.textSecondary),
+                        prefixIcon: Icon(
+                          Icons.badge_outlined,
+                          color: theme.textSecondary,
+                        ),
                         hintText: 'Nhập họ và tên',
                       ),
                     ),
@@ -289,11 +351,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _GenderChip(label: 'Nam', value: 'MALE', selected: _selectedGender, onTap: () => setState(() => _selectedGender = 'MALE'), theme: theme),
+                        _GenderChip(
+                          label: 'Nam',
+                          value: 'MALE',
+                          selected: _selectedGender,
+                          onTap: () => setState(() => _selectedGender = 'MALE'),
+                          theme: theme,
+                        ),
                         const SizedBox(width: 10),
-                        _GenderChip(label: 'Nữ', value: 'FEMALE', selected: _selectedGender, onTap: () => setState(() => _selectedGender = 'FEMALE'), theme: theme),
+                        _GenderChip(
+                          label: 'Nữ',
+                          value: 'FEMALE',
+                          selected: _selectedGender,
+                          onTap: () =>
+                              setState(() => _selectedGender = 'FEMALE'),
+                          theme: theme,
+                        ),
                         const SizedBox(width: 10),
-                        _GenderChip(label: 'Khác', value: 'OTHER', selected: _selectedGender, onTap: () => setState(() => _selectedGender = 'OTHER'), theme: theme),
+                        _GenderChip(
+                          label: 'Khác',
+                          value: 'OTHER',
+                          selected: _selectedGender,
+                          onTap: () =>
+                              setState(() => _selectedGender = 'OTHER'),
+                          theme: theme,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -304,14 +386,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     GestureDetector(
                       onTap: _selectDate,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
                           color: theme.surfaceVariant,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.cake_outlined, color: theme.textSecondary, size: 20),
+                            Icon(
+                              Icons.cake_outlined,
+                              color: theme.textSecondary,
+                              size: 20,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -320,11 +409,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     : 'Chọn ngày sinh',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: _dateOfBirth != null ? theme.textPrimary : theme.textHint,
+                                  color: _dateOfBirth != null
+                                      ? theme.textPrimary
+                                      : theme.textHint,
                                 ),
                               ),
                             ),
-                            Icon(Icons.calendar_today_rounded, color: theme.textHint, size: 18),
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              color: theme.textHint,
+                              size: 18,
+                            ),
                           ],
                         ),
                       ),
@@ -338,8 +433,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       controller: _emailCtrl,
                       readOnly: true,
                       decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.email_outlined, color: theme.textSecondary),
-                        suffixIcon: Icon(Icons.lock_outline, size: 18, color: theme.textHint),
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: theme.textSecondary,
+                        ),
+                        suffixIcon: Icon(
+                          Icons.lock_outline,
+                          size: 18,
+                          color: theme.textHint,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -349,7 +451,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: ElevatedButton.icon(
                         onPressed: provider.isSaving ? null : _saveProfile,
                         icon: provider.isSaving
-                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
                             : const Icon(Icons.save_rounded, size: 18),
                         label: const Text('Lưu thay đổi'),
                       ),
@@ -367,21 +476,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       controller: _oldPassCtrl,
                       label: 'Mật khẩu hiện tại',
                       obscure: _obscureOld,
-                      onToggle: () => setState(() => _obscureOld = !_obscureOld),
+                      onToggle: () =>
+                          setState(() => _obscureOld = !_obscureOld),
                     ),
                     const SizedBox(height: 12),
                     _PasswordField(
                       controller: _newPassCtrl,
                       label: 'Mật khẩu mới',
                       obscure: _obscureNew,
-                      onToggle: () => setState(() => _obscureNew = !_obscureNew),
+                      onToggle: () =>
+                          setState(() => _obscureNew = !_obscureNew),
                     ),
                     const SizedBox(height: 12),
                     _PasswordField(
                       controller: _confirmPassCtrl,
                       label: 'Xác nhận mật khẩu mới',
                       obscure: _obscureConfirm,
-                      onToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                      onToggle: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
                     const SizedBox(height: 20),
                     SizedBox(
@@ -390,7 +502,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onPressed: provider.isSaving ? null : _changePassword,
                         icon: const Icon(Icons.lock_reset_rounded, size: 18),
                         label: const Text('Đổi mật khẩu'),
-                        style: ElevatedButton.styleFrom(backgroundColor: theme.accentLight),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.accentLight,
+                        ),
                       ),
                     ),
                   ],
@@ -405,7 +519,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _MenuTile(
                       icon: Icons.info_outline_rounded,
                       label: 'Phiên bản ứng dụng',
-                      trailing: Text('1.0.0', style: TextStyle(color: theme.textSecondary, fontSize: 13)),
+                      trailing: Text(
+                        '1.0.0',
+                        style: TextStyle(
+                          color: theme.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                     const Divider(height: 1),
                     _MenuTile(
@@ -451,9 +571,16 @@ class _ProfileSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.5),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.9),
+              width: 1.5,
+            ),
             boxShadow: [
-              BoxShadow(color: theme.primaryColor.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 6)),
+              BoxShadow(
+                color: theme.primaryColor.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
             ],
           ),
           child: Column(
@@ -472,7 +599,11 @@ class _ProfileSection extends StatelessWidget {
                   const SizedBox(width: 10),
                   Text(
                     title,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: theme.textPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -496,7 +627,11 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: TextStyle(fontSize: 12, color: theme.textSecondary, fontWeight: FontWeight.w500),
+      style: TextStyle(
+        fontSize: 12,
+        color: theme.textSecondary,
+        fontWeight: FontWeight.w500,
+      ),
     );
   }
 }
@@ -527,7 +662,9 @@ class _GenderChip extends StatelessWidget {
           color: isSelected ? theme.primaryColor : theme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? theme.primaryColor : theme.textHint.withValues(alpha: 0.3),
+            color: isSelected
+                ? theme.primaryColor
+                : theme.textHint.withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -566,7 +703,10 @@ class _PasswordField extends StatelessWidget {
         labelText: label,
         prefixIcon: const Icon(Icons.lock_outline),
         suffixIcon: IconButton(
-          icon: Icon(obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
+          icon: Icon(
+            obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+            size: 20,
+          ),
           onPressed: onToggle,
         ),
       ),
@@ -602,9 +742,21 @@ class _MenuTile extends StatelessWidget {
         leading: Icon(icon, color: iconColor ?? theme.textSecondary, size: 22),
         title: Text(
           label,
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: labelColor ?? theme.textPrimary),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: labelColor ?? theme.textPrimary,
+          ),
         ),
-        trailing: trailing ?? (onTap != null ? Icon(Icons.chevron_right_rounded, color: theme.textHint, size: 20) : null),
+        trailing:
+            trailing ??
+            (onTap != null
+                ? Icon(
+                    Icons.chevron_right_rounded,
+                    color: theme.textHint,
+                    size: 20,
+                  )
+                : null),
       ),
     );
   }

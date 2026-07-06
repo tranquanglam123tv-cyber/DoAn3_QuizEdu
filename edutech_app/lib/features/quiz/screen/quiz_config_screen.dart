@@ -125,7 +125,6 @@ class _QuizConfigScreenState extends State<QuizConfigScreen> {
                     return Row(
                       children: _counts.map((c) {
                         final selected = _questionCount == c;
-                        final isLocked = c == 20 || c == 40;
                         return Expanded(
                           child: GestureDetector(
                             onTap: () => _onCountSelected(c),
@@ -145,23 +144,12 @@ class _QuizConfigScreenState extends State<QuizConfigScreen> {
                                     ? [BoxShadow(color: theme.primaryColor.withValues(alpha: 0.25), blurRadius: 8)]
                                     : [],
                               ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Center(
-                                    child: Text('$c',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                            color: selected ? Colors.white : theme.textSecondary)),
-                                  ),
-                                  if (isLocked)
-                                    Positioned(
-                                      right: 4,
-                                      top: 2,
-                                      child: Icon(Icons.lock_rounded, size: 12, color: theme.textHint),
-                                    ),
-                                ],
+                              child: Center(
+                                child: Text('$c',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: selected ? Colors.white : theme.textSecondary)),
                               ),
                             ),
                           ),
@@ -184,7 +172,6 @@ class _QuizConfigScreenState extends State<QuizConfigScreen> {
                   children: difficulties.map((d) {
                     final selected = _difficulty == d['value'];
                     final color = d['color'] as Color;
-                    final isPremium = d['premium'] == true;
                     return GestureDetector(
                       onTap: () => _onDifficultySelected(d['value'] as String),
                       child: AnimatedContainer(
@@ -233,24 +220,6 @@ class _QuizConfigScreenState extends State<QuizConfigScreen> {
                                               fontWeight: FontWeight.bold,
                                               fontSize: 14,
                                               color: selected ? color : theme.textPrimary)),
-                                      if (isPremium) ...[
-                                        const SizedBox(width: 6),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: theme.warning.withValues(alpha: 0.15),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.workspace_premium_rounded, size: 10, color: theme.warning),
-                                              const SizedBox(width: 2),
-                                              Text('Premium', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: theme.warning)),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
                                     ],
                                   ),
                                   const SizedBox(height: 2),
@@ -260,9 +229,7 @@ class _QuizConfigScreenState extends State<QuizConfigScreen> {
                                 ],
                               ),
                             ),
-                            if (isPremium)
-                              Icon(Icons.lock_rounded, color: theme.textHint, size: 20)
-                            else if (selected)
+                            if (selected)
                               Icon(Icons.check_circle_rounded, color: color, size: 22)
                             else
                               Icon(Icons.radio_button_unchecked_rounded,
