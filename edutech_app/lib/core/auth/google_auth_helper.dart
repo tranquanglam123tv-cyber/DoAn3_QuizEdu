@@ -1,39 +1,17 @@
-import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleAuthHelper {
-  static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: const ['email', 'profile'],
-  );
-
-  static final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-
-  static Future<GoogleSignInAccount?> _ensureWebSignIn() async {
-    if (kIsWeb) {
-      try {
-        return await _googleSignIn.signInSilently();
-      } catch (_) {
-        return await _googleSignIn.signIn();
-      }
-    }
-    return _googleSignIn.signIn();
-  }
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   static Future<UserCredential?> signInWithGoogle() async {
     try {
-      final account = await _ensureWebSignIn();
-      if (account == null) return null;
+      // Use Firebase Auth Google provider directly
+      final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      googleProvider.addScope('email');
+      googleProvider.addScope('profile');
 
-      final googleAuth = await account.authentication;
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-        accessToken: googleAuth.accessToken,
-      );
-
-      return await _firebaseAuth.signInWithCredential(credential);
+      // Sign in and get UserCredential
+      return await _auth.signInWithPopup(googleProvider);
     } on FirebaseAuthException catch (_) {
       rethrow;
     } catch (e) {
@@ -42,9 +20,6 @@ class GoogleAuthHelper {
   }
 
   static Future<void> signOut() async {
-    await _firebaseAuth.signOut();
-    if (!kIsWeb && Platform.isAndroid) {
-      await _googleSignIn.signOut();
-    }
+    await _auth.signOut();
   }
 }

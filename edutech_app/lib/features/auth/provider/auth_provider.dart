@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/auth/google_auth_helper.dart';
 import '../../../core/storage/token_storage.dart';
 import '../model/auth_model.dart';
 
@@ -51,17 +53,12 @@ class AuthProvider extends ChangeNotifier {
         '/auth/login',
         data: {'email': email, 'password': password},
       );
-      debugPrint('Login response: ${res.data}');
       final auth = AuthModel.fromJson(res.data['data']);
       await TokenStorage.save(auth.accessToken);
       currentUser = auth;
       return true;
     } catch (e) {
       debugPrint('Login error: $e');
-      if (e is DioException) {
-        debugPrint('Login response data: ${e.response?.data}');
-        debugPrint('Login status: ${e.response?.statusCode}');
-      }
       error = _parseError(e);
       return false;
     } finally {
@@ -85,6 +82,47 @@ class AuthProvider extends ChangeNotifier {
       currentUser = auth;
       return true;
     } catch (e) {
+      debugPrint('Register error: $e');
+      error = _parseError(e);
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> loginWithGoogle() async {
+    isLoading = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      final credential = await GoogleAuthHelper.signInWithGoogle();
+      if (credential == null) {
+        error = 'Đã hủy đăng nhập Google';
+        return false;
+      }
+
+      final idToken = await credential.user?.getIdToken();
+      if (idToken == null) {
+        error = 'Không lấy được Google token';
+        return false;
+      }
+
+      final res = await ApiClient.dio.post(
+        '/auth/google',
+        data: {'idToken': idToken},
+      );
+      final auth = AuthModel.fromJson(res.data['data']);
+      await TokenStorage.save(auth.accessToken);
+      currentUser = auth;
+      return true;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Google Firebase auth error: ${e.code} - ${e.message}');
+      error = 'Đăng nhập Google thất bại: ${e.message}';
+      return false;
+    } catch (e) {
+      debugPrint('Google login error: $e');
       error = _parseError(e);
       return false;
     } finally {
@@ -95,6 +133,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     await TokenStorage.delete();
+    await GoogleAuthHelper.signOut();
     currentUser = null;
     notifyListeners();
   }

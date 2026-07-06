@@ -29,6 +29,8 @@ class AnswerResultModel {
 class ExamModel {
   final int id;
   final int quizId;
+  final String quizName;
+  final String difficulty;
   final String status;
   final int totalQuestions;
   final int correctCount;
@@ -40,6 +42,8 @@ class ExamModel {
   ExamModel({
     required this.id,
     required this.quizId,
+    required this.quizName,
+    required this.difficulty,
     required this.status,
     required this.totalQuestions,
     required this.correctCount,
@@ -52,6 +56,8 @@ class ExamModel {
   factory ExamModel.fromJson(Map<String, dynamic> json) => ExamModel(
         id: json['id'],
         quizId: json['quizId'],
+        quizName: json['quizName'] ?? '',
+        difficulty: json['difficulty'] ?? 'MEDIUM',
         status: json['status'],
         totalQuestions: json['totalQuestions'],
         correctCount: json['correctCount'],
@@ -64,4 +70,18 @@ class ExamModel {
                 .toList()
             : null,
       );
+
+  bool get isPassed => score >= 5.0;
+  String get difficultyLabel {
+    switch (difficulty) {
+      case 'EASY':
+        return 'Dễ';
+      case 'MEDIUM':
+        return 'Trung bình';
+      case 'HARD':
+        return 'Khó';
+      default:
+        return difficulty;
+    }
+  }
 }

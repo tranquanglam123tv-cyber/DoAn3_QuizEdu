@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'core/theme/app_theme.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'core/theme/theme_provider.dart';
 import 'core/widgets/main_shell.dart';
 import 'features/auth/provider/auth_provider.dart';
 import 'features/auth/screen/login_screen.dart';
@@ -21,25 +23,26 @@ import 'features/quiz/model/quiz_model.dart';
 import 'features/exam/provider/exam_provider.dart';
 import 'features/exam/screen/exam_screen.dart';
 import 'features/exam/screen/result_screen.dart';
+import 'features/exam/screen/history_screen.dart';
 import 'features/dashboard/screen/dashboard_screen.dart';
 import 'features/profile/screen/profile_screen.dart';
 import 'features/profile/provider/profile_provider.dart';
-import 'features/admin/screen/admin_screen.dart';
-import 'features/admin/provider/admin_provider.dart';
+import 'features/settings/screen/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await dotenv.load(fileName: '.env');
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
         ChangeNotifierProvider(create: (_) => DocumentProvider()),
         ChangeNotifierProvider(create: (_) => QuizProvider()),
         ChangeNotifierProvider(create: (_) => ExamProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
-        ChangeNotifierProvider(create: (_) => AdminProvider()),
       ],
       child: const MyApp(),
     ),
@@ -61,21 +64,14 @@ GoRouter _buildRouter(AuthProvider auth) => GoRouter(
     GoRoute(path: '/login', builder: (_, s) => const LoginScreen()),
     GoRoute(path: '/register', builder: (_, s) => const RegisterScreen()),
 
-    // Shell route — bottom navigation
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => MainShell(navigationShell: shell),
-      cd /d d:\TQLCNTT2311074\Nam3HK3\QuizEdu
-      git rm --cached quizedu
-      git add .
-      git commit -m "Remove embedded quizedu repo"
-      git push      branches: [
-        // Branch 0 — Home (Dashboard)
+      branches: [
         StatefulShellBranch(
           routes: [
             GoRoute(path: '/home', builder: (_, s) => const DashboardScreen()),
           ],
         ),
-        // Branch 1 — Subjects
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -141,24 +137,25 @@ GoRouter _buildRouter(AuthProvider auth) => GoRouter(
               path: '/exam/:examId/result',
               builder: (_, s) => const ResultScreen(),
             ),
+            GoRoute(
+              path: '/history',
+              builder: (_, s) => const HistoryScreen(),
+            ),
           ],
         ),
-        // Branch 2 — AI Hub
         StatefulShellBranch(
           routes: [
             GoRoute(path: '/ai-hub', builder: (_, s) => const AiHubScreen()),
           ],
         ),
-        // Branch 3 — Profile
         StatefulShellBranch(
           routes: [
             GoRoute(path: '/profile', builder: (_, s) => const ProfileScreen()),
           ],
         ),
-        // Branch 4 — Admin (hidden, accessible via /admin route)
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/admin', builder: (_, s) => const AdminScreen()),
+            GoRoute(path: '/settings', builder: (_, s) => const SettingsScreen()),
           ],
         ),
       ],
@@ -175,25 +172,30 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   GoRouter? _router;
+  AuthProvider? _lastAuth;
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     final auth = context.watch<AuthProvider>();
 
     if (auth.isInitializing) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
+        theme: theme.themeData,
         home: const _SplashScreen(),
       );
     }
 
-    _router ??= _buildRouter(auth);
+    if (_router == null || _lastAuth != auth) {
+      _lastAuth = auth;
+      _router = _buildRouter(auth);
+    }
 
     return MaterialApp.router(
       title: 'EduTech AI',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: theme.themeData,
       routerConfig: _router!,
     );
   }
@@ -204,23 +206,35 @@ class _SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.gradientPrimary),
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.school_rounded, color: Colors.white, size: 64),
-              SizedBox(height: 16),
-              Text('EduTech AI',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold)),
-              SizedBox(height: 32),
-              CircularProgressIndicator(color: Colors.white54, strokeWidth: 2),
-            ],
+        decoration: BoxDecoration(gradient: theme.gradientPrimary),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Colors.white24, Colors.white10]),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.5),
+                  ),
+                  child: Icon(Icons.school_rounded, color: Colors.white, size: 48),
+                ),
+                const SizedBox(height: 16),
+                const Text('QuizEdu - Học & Thi',
+                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                const Text('Học thông minh, tiến xa hơn',
+                    style: TextStyle(color: Colors.white70, fontSize: 13)),
+                const SizedBox(height: 32),
+                const CircularProgressIndicator(color: Colors.white54, strokeWidth: 2),
+              ],
+            ),
           ),
         ),
       ),

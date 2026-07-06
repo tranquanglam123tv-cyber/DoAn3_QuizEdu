@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "65758914435",
+    "project_id": "quizedu-9b21f",
+    "storage_bucket": "quizedu-9b21f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:65758914435:android:9824ebd13a8f332e3bb8b6",
+        "android_client_info": {
+          "package_name": "com.example.edutech_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "65758914435-pb705nskhuuqf2ccdq2qg6v4m2ffmj4q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.edutech_app",
+            "certificate_hash": "0f6e52aab05b5a513665e55a5fae6e5a1cd133d9"
+          }
+        },
+        {
+          "client_id": "65758914435-9h3hmt6loeaai1us4ssk5850hlj00i8s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWCIVSOWLbp_fQV5gXmkQMKbYtaTdJmyc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "65758914435-9h3hmt6loeaai1us4ssk5850hlj00i8s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -16,10 +16,23 @@ class FlashcardItem {
 
   FlashcardItem({required this.question, required this.answer});
 
-  factory FlashcardItem.fromJson(Map<String, dynamic> json) => FlashcardItem(
-        question: json['question'] ?? '',
-        answer: json['answer'] ?? '',
-      );
+  factory FlashcardItem.fromJson(Map<String, dynamic> json) {
+    final answerValue = json['answer'];
+    String answerText;
+    if (answerValue is String) {
+      answerText = answerValue;
+    } else if (answerValue is List) {
+      answerText = answerValue.join('\n');
+    } else if (answerValue is Map) {
+      answerText = answerValue.toString();
+    } else {
+      answerText = answerValue?.toString() ?? '';
+    }
+    return FlashcardItem(
+      question: json['question'] ?? '',
+      answer: answerText,
+    );
+  }
 }
 
 class FlashcardModel {
@@ -29,7 +42,7 @@ class FlashcardModel {
 
   factory FlashcardModel.fromJson(Map<String, dynamic> json) => FlashcardModel(
         flashcards: (json['flashcards'] as List? ?? [])
-            .map((e) => FlashcardItem.fromJson(e))
+            .map((e) => FlashcardItem.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
 }

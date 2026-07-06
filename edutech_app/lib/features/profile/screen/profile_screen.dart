@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../../auth/provider/auth_provider.dart';
 import '../provider/profile_provider.dart';
 
@@ -47,26 +47,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ok = await provider.updateProfile(auth, _nameCtrl.text.trim());
     if (mounted && ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Cập nhật hồ sơ thành công!'), backgroundColor: AppColors.success),
+        SnackBar(content: Text('Cập nhật hồ sơ thành công!'), backgroundColor: context.read<ThemeProvider>().success),
       );
     } else if (mounted && provider.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error!), backgroundColor: AppColors.danger),
+        SnackBar(content: Text(provider.error!), backgroundColor: context.read<ThemeProvider>().danger),
       );
     }
   }
 
   Future<void> _changePassword() async {
+    final theme = context.read<ThemeProvider>();
     if (_oldPassCtrl.text.isEmpty || _newPassCtrl.text.isEmpty) return;
     if (_newPassCtrl.text != _confirmPassCtrl.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mật khẩu mới không khớp!'), backgroundColor: AppColors.danger),
+        SnackBar(content: Text('Mật khẩu mới không khớp!'), backgroundColor: theme.danger),
       );
       return;
     }
     if (_newPassCtrl.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mật khẩu tối thiểu 6 ký tự!'), backgroundColor: AppColors.danger),
+        SnackBar(content: Text('Mật khẩu tối thiểu 6 ký tự!'), backgroundColor: theme.danger),
       );
       return;
     }
@@ -77,16 +78,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _newPassCtrl.clear();
       _confirmPassCtrl.clear();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Đổi mật khẩu thành công!'), backgroundColor: AppColors.success),
+        SnackBar(content: Text('Đổi mật khẩu thành công!'), backgroundColor: theme.success),
       );
     } else if (mounted && provider.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error!), backgroundColor: AppColors.danger),
+        SnackBar(content: Text(provider.error!), backgroundColor: theme.danger),
       );
     }
   }
 
   Future<void> _logout() async {
+    final theme = context.read<ThemeProvider>();
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -97,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Huỷ')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+            style: ElevatedButton.styleFrom(backgroundColor: theme.danger),
             child: const Text('Đăng xuất'),
           ),
         ],
@@ -112,6 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     final auth = context.watch<AuthProvider>();
     final provider = context.watch<ProfileProvider>();
     final user = auth.currentUser;
@@ -121,51 +124,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : 'U';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.background,
       body: CustomScrollView(
         slivers: [
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 220,
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            automaticallyImplyLeading: false,
-            title: const Text('Hồ sơ',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(gradient: AppColors.gradientPrimary),
-                child: SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 16),
-                      Container(
-                        width: 88,
-                        height: 88,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Colors.white24, Colors.white10],
-                          ),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                        ),
-                        child: Center(
-                          child: Text(
-                            initials,
-                            style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(user?.fullName ?? '', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(user?.email ?? '', style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          AppTheme.glassHeader(
+            context: context,
+            title: 'Hồ sơ',
+            subtitle: 'Quản lý tài khoản của bạn',
+            onBack: () => context.pop(),
           ),
           SliverPadding(
             padding: const EdgeInsets.all(20),
@@ -240,7 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onPressed: provider.isSaving ? null : _changePassword,
                           icon: const Icon(Icons.lock_reset_rounded, size: 18),
                           label: const Text('Đổi mật khẩu'),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentLight),
+                          style: ElevatedButton.styleFrom(backgroundColor: theme.accentLight),
                         ),
                       ),
                     ],
@@ -256,8 +222,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _MenuTile(
                           icon: Icons.admin_panel_settings_rounded,
                           label: 'Quản trị hệ thống',
-                          iconColor: AppColors.warning,
-                          labelColor: AppColors.textPrimary,
+                          iconColor: theme.warning,
+                          labelColor: theme.textPrimary,
                           onTap: () => context.push('/admin'),
                         ),
                         const Divider(height: 1),
@@ -265,14 +231,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _MenuTile(
                         icon: Icons.info_outline_rounded,
                         label: 'Phiên bản ứng dụng',
-                        trailing: const Text('1.0.0', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        trailing: Text('1.0.0', style: TextStyle(color: theme.textSecondary, fontSize: 13)),
                       ),
                       const Divider(height: 1),
                       _MenuTile(
                         icon: Icons.logout_rounded,
                         label: 'Đăng xuất',
-                        iconColor: AppColors.danger,
-                        labelColor: AppColors.danger,
+                        iconColor: theme.danger,
+                        labelColor: theme.danger,
                         onTap: _logout,
                       ),
                     ],
@@ -297,9 +263,10 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4)),
@@ -315,13 +282,13 @@ class _SectionCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: theme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, color: AppColors.primary, size: 18),
+                  child: Icon(icon, color: theme.primaryColor, size: 18),
                 ),
-                const SizedBox(width: 10),
-                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                SizedBox(width: 10),
+                Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.textPrimary)),
               ],
             ),
           ),
@@ -380,14 +347,15 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return Material(
       color: Colors.transparent,
       child: ListTile(
         onTap: onTap,
         contentPadding: EdgeInsets.zero,
-        leading: Icon(icon, color: iconColor ?? AppColors.textSecondary, size: 22),
-        title: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: labelColor ?? AppColors.textPrimary)),
-        trailing: trailing ?? (onTap != null ? const Icon(Icons.chevron_right_rounded, color: AppColors.textHint, size: 20) : null),
+        leading: Icon(icon, color: iconColor ?? theme.textSecondary, size: 22),
+        title: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: labelColor ?? theme.textPrimary)),
+        trailing: trailing ?? (onTap != null ? Icon(Icons.chevron_right_rounded, color: theme.textHint, size: 20) : null),
       ),
     );
   }

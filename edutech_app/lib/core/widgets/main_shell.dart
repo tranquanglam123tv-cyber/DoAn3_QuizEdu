@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../theme/app_theme.dart';
-import '../../features/auth/provider/auth_provider.dart';
+import '../theme/theme_provider.dart';
 
 class MainShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -14,25 +13,12 @@ class MainShell extends StatelessWidget {
     _TabItem(icon: Icons.book_outlined, activeIcon: Icons.book_rounded, label: 'Môn học', path: '/subjects'),
     _TabItem(icon: Icons.auto_awesome_outlined, activeIcon: Icons.auto_awesome_rounded, label: 'AI Tools', path: '/ai-hub'),
     _TabItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Hồ sơ', path: '/profile'),
+    _TabItem(icon: Icons.settings_outlined, activeIcon: Icons.settings_rounded, label: 'Cài đặt', path: '/settings'),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final isAdmin = auth.currentUser?.role == 'ADMIN';
-
-    // Redirect admin away from student screens to /admin
-    if (isAdmin && navigationShell.currentIndex != 4) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.go('/admin');
-      });
-    }
-
-    // Admin: no bottom nav, just show content
-    if (isAdmin) {
-      return Scaffold(body: navigationShell);
-    }
-
+    context.watch<ThemeProvider>();
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: _BottomNav(
@@ -57,9 +43,10 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
@@ -70,7 +57,7 @@ class _BottomNav extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
             children: List.generate(
               tabs.length,
@@ -98,16 +85,17 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
         decoration: BoxDecoration(
           color: isActive
-              ? AppColors.primary.withValues(alpha: 0.1)
+              ? theme.primaryColor.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
@@ -116,11 +104,11 @@ class _NavItem extends StatelessWidget {
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
-              width: isActive ? 36 : 0,
+              width: isActive ? 24 : 0,
               height: 3,
               margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: AppColors.primary,
+                color: theme.primaryColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -129,8 +117,8 @@ class _NavItem extends StatelessWidget {
               child: Icon(
                 isActive ? tab.activeIcon : tab.icon,
                 key: ValueKey(isActive),
-                color: isActive ? AppColors.primary : AppColors.textHint,
-                size: 26,
+                color: isActive ? theme.primaryColor : theme.textHint,
+                size: 24,
               ),
             ),
             const SizedBox(height: 4),
@@ -138,9 +126,8 @@ class _NavItem extends StatelessWidget {
               tab.label,
               style: TextStyle(
                 fontSize: 10,
-                fontWeight:
-                    isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? AppColors.primary : AppColors.textHint,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                color: isActive ? theme.primaryColor : theme.textHint,
               ),
             ),
           ],

@@ -3,8 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_provider.dart';
+import '../../../features/auth/provider/auth_provider.dart';
 import '../model/dashboard_model.dart';
-import '../../auth/provider/auth_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -44,18 +45,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     final auth = context.watch<AuthProvider>();
     final name = auth.currentUser?.fullName ?? '';
     final firstName = name.trim().split(' ').last;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.background,
       body: RefreshIndicator(
         onRefresh: _load,
-        color: AppColors.primary,
+        color: theme.primaryColor,
         child: CustomScrollView(
           slivers: [
-            _buildHeader(firstName),
+            AppTheme.glassHeader(
+              context: context,
+              title: 'Tổng quan học tập',
+              subtitle: 'Xin chào, $firstName',
+              onBack: null,
+            ),
             if (_loading)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
@@ -66,12 +73,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.wifi_off_rounded,
-                          size: 56, color: AppColors.textHint),
+                      Icon(Icons.wifi_off_rounded, size: 56, color: theme.textHint),
                       const SizedBox(height: 12),
-                      const Text('Không thể tải dữ liệu',
-                          style: TextStyle(
-                              color: AppColors.textSecondary, fontSize: 15)),
+                      Text('Không thể tải dữ liệu', style: TextStyle(color: theme.textSecondary, fontSize: 15)),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         onPressed: _load,
@@ -96,6 +100,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     _sectionTitle('Truy cập nhanh'),
                     const SizedBox(height: 12),
                     _buildQuickActions(context),
+                    const SizedBox(height: 12),
+                    _historyButton(),
                     const SizedBox(height: 20),
                     _sectionTitle('Chi tiết câu trả lời'),
                     const SizedBox(height: 12),
@@ -113,180 +119,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildHeader(String firstName) {
-    return SliverAppBar(
-      expandedHeight: 180,
-      pinned: true,
-      stretch: true,
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
-      automaticallyImplyLeading: false,
-      title: const Text(
-        'Trang chủ',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        stretchModes: const [StretchMode.zoomBackground],
-        collapseMode: CollapseMode.pin,
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF7ECF9E), Color(0xFF5ABF7A)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Stack(
-            children: [
-              // Glass orbs
-              Positioned(
-                top: -30,
-                right: -40,
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.1),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -50,
-                left: 100,
-                child: Container(
-                  width: 180,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.08),
-                  ),
-                ),
-              ),
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Xin chào, $firstName! 👋',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Tổng quan học tập',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.bar_chart_rounded,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _sectionTitle(String title) {
+    final theme = context.watch<ThemeProvider>();
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
-      ),
+      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.textPrimary),
     );
   }
 
   Widget _buildStatGrid() {
+    final theme = context.watch<ThemeProvider>();
     return Column(
       children: [
         Row(
           children: [
-            Expanded(
-              child: _StatCard(
-                icon: Icons.book_rounded,
-                label: 'Môn học',
-                value: '${_data?.totalSubjects ?? 0}',
-                gradient: AppColors.gradientPrimary,
-              ),
-            ),
+            Expanded(child: _StatCard(icon: Icons.book_rounded, label: 'Môn học', value: '${_data?.totalSubjects ?? 0}', gradient: theme.gradientPrimary)),
             const SizedBox(width: 12),
-            Expanded(
-              child: _StatCard(
-                icon: Icons.description_rounded,
-                label: 'Tài liệu',
-                value: '${_data?.totalDocuments ?? 0}',
-                gradient: AppColors.gradientAccent,
-              ),
-            ),
+            Expanded(child: _StatCard(icon: Icons.description_rounded, label: 'Tài liệu', value: '${_data?.totalDocuments ?? 0}', gradient: theme.gradientAccent)),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(
-              child: _StatCard(
-                icon: Icons.quiz_rounded,
-                label: 'Đề Quiz',
-                value: '${_data?.totalQuizzes ?? 0}',
-                gradient: AppColors.gradientWarm,
-              ),
-            ),
+            Expanded(child: _StatCard(icon: Icons.quiz_rounded, label: 'Đề Quiz', value: '${_data?.totalQuizzes ?? 0}', gradient: theme.gradientWarm)),
             const SizedBox(width: 12),
-            Expanded(
-              child: _StatCard(
-                icon: Icons.assignment_turned_in_rounded,
-                label: 'Lần thi',
-                value: '${_data?.totalExams ?? 0}',
-                gradient: const LinearGradient(
-                  colors: [AppColors.primaryDark, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
+            Expanded(child: _StatCard(icon: Icons.assignment_turned_in_rounded, label: 'Lần thi', value: '${_data?.totalExams ?? 0}', gradient: LinearGradient(colors: [theme.primaryDark, theme.primaryColor], begin: Alignment.topLeft, end: Alignment.bottomRight))),
           ],
         ),
       ],
@@ -294,40 +151,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildQuickActions(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return Row(
       children: [
-        Expanded(
-          child: _QuickAction(
-            icon: Icons.book_rounded,
-            label: 'Môn học',
-            color: AppColors.primary,
-            onTap: () => context.go('/subjects'),
-          ),
-        ),
+        Expanded(child: _QuickAction(icon: Icons.book_rounded, label: 'Môn học', color: theme.primaryColor, onTap: () => context.go('/subjects'))),
         const SizedBox(width: 12),
-        Expanded(
-          child: _QuickAction(
-            icon: Icons.auto_awesome_rounded,
-            label: 'AI Tools',
-            color: AppColors.accent,
-            onTap: () => context.go('/ai-hub'),
-          ),
-        ),
+        Expanded(child: _QuickAction(icon: Icons.auto_awesome_rounded, label: 'AI Tools', color: theme.accent, onTap: () => context.go('/ai-hub'))),
         const SizedBox(width: 12),
-        Expanded(
-          child: _QuickAction(
-            icon: Icons.person_rounded,
-            label: 'Hồ sơ',
-            color: AppColors.primaryDark,
-            onTap: () => context.go('/profile'),
-          ),
-        ),
+        Expanded(child: _QuickAction(icon: Icons.person_rounded, label: 'Hồ sơ', color: theme.primaryDark, onTap: () => context.go('/profile'))),
       ],
     );
   }
-}
 
-// ─── Score Card ───────────────────────────────────────────────────────────────
+  Widget _historyButton() {
+    final theme = context.watch<ThemeProvider>();
+    return GestureDetector(
+      onTap: () => context.push('/history'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: theme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: theme.primaryColor.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.history_rounded, color: theme.primaryColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Lịch sử bài thi',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.textPrimary),
+                  ),
+                  Text(
+                    'Xem lại các bài thi đã làm',
+                    style: TextStyle(fontSize: 12, color: theme.textHint),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: theme.primaryColor, size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _ScoreCard extends StatelessWidget {
   final DashboardModel? data;
@@ -335,6 +221,7 @@ class _ScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     final score = data?.averageScore ?? 0;
     final total = data?.totalAnswers ?? 0;
     final correct = data?.totalCorrectAnswers ?? 0;
@@ -343,22 +230,10 @@ class _ScoreCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF7ECF9E), Color(0xFF5ABF7A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: theme.gradientPrimary,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.25),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+        boxShadow: [BoxShadow(color: theme.primaryColor.withValues(alpha: 0.25), blurRadius: 20, offset: const Offset(0, 8))],
       ),
       child: Row(
         children: [
@@ -366,69 +241,30 @@ class _ScoreCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Điểm trung bình',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
+                const Text('Điểm trung bình', style: TextStyle(color: Colors.white70, fontSize: 12)),
                 const SizedBox(height: 4),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      score.toStringAsFixed(score.truncateToDouble() == score ? 0 : 1),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        height: 1,
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 4, left: 4),
-                      child: Text(
-                        '/10',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                    ),
+                    Text(score.toStringAsFixed(score.truncateToDouble() == score ? 0 : 1), style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold, height: 1)),
+                    const Padding(padding: EdgeInsets.only(bottom: 4, left: 4), child: Text('/10', style: TextStyle(color: Colors.white70, fontSize: 16))),
                   ],
                 ),
               ],
             ),
           ),
-          Container(
-            width: 1,
-            height: 50,
-            color: Colors.white24,
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-          ),
+          Container(width: 1, height: 50, color: Colors.white24, margin: const EdgeInsets.symmetric(horizontal: 16)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Tỉ lệ đúng',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
+                const Text('Tỉ lệ đúng', style: TextStyle(color: Colors.white70, fontSize: 12)),
                 const SizedBox(height: 4),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      percent.toStringAsFixed(0),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        height: 1,
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 4, left: 2),
-                      child: Text(
-                        '%',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                    ),
+                    Text(percent.toStringAsFixed(0), style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold, height: 1)),
+                    const Padding(padding: EdgeInsets.only(bottom: 4, left: 2), child: Text('%', style: TextStyle(color: Colors.white70, fontSize: 16))),
                   ],
                 ),
               ],
@@ -440,20 +276,13 @@ class _ScoreCard extends StatelessWidget {
   }
 }
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
   final LinearGradient gradient;
 
-  const _StatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.gradient,
-  });
+  const _StatCard({required this.icon, required this.label, required this.value, required this.gradient});
 
   @override
   Widget build(BuildContext context) {
@@ -462,28 +291,14 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: gradient,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: gradient.colors.first.withValues(alpha: 0.2),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+        boxShadow: [BoxShadow(color: gradient.colors.first.withValues(alpha: 0.2), blurRadius: 15, offset: const Offset(0, 6))],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.4),
-              ),
-            ),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white.withValues(alpha: 0.4))),
             child: Icon(icon, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
@@ -491,24 +306,8 @@ class _StatCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    height: 1.1,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(value, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, height: 1.1)),
+                Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -518,20 +317,13 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ─── Quick Action ─────────────────────────────────────────────────────────────
-
 class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
 
-  const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
+  const _QuickAction({required this.icon, required this.label, required this.color, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -540,31 +332,13 @@ class _QuickAction extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.15)),
-        ),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: 0.15))),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
+            Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(icon, color: color, size: 22)),
             const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -572,14 +346,13 @@ class _QuickAction extends StatelessWidget {
   }
 }
 
-// ─── Answer Card ──────────────────────────────────────────────────────────────
-
 class _AnswerCard extends StatelessWidget {
   final DashboardModel? data;
   const _AnswerCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     final total = data?.totalAnswers ?? 0;
     final correct = data?.totalCorrectAnswers ?? 0;
     final wrong = total - correct;
@@ -590,97 +363,40 @@ class _AnswerCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.9),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.5),
+        boxShadow: [BoxShadow(color: theme.primaryColor.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 8))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.analytics_rounded,
-                    color: AppColors.primary, size: 18),
-              ),
+              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: theme.primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Icon(Icons.analytics_rounded, color: theme.primaryColor, size: 18)),
               const SizedBox(width: 10),
-              const Text(
-                'Chi tiết câu trả lời',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              Text('Chi tiết câu trả lời', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.textPrimary)),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Đúng $correct / $total',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              Text(
-                '${(percent * 100).toStringAsFixed(0)}%',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.success,
-                ),
-              ),
+              Text('Đúng $correct / $total', style: TextStyle(fontSize: 12, color: theme.textSecondary)),
+              Text('${(percent * 100).toStringAsFixed(0)}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.success)),
             ],
           ),
           const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: percent,
-              minHeight: 10,
-              backgroundColor: AppColors.danger.withValues(alpha: 0.15),
-              valueColor: const AlwaysStoppedAnimation(AppColors.success),
-            ),
+            child: LinearProgressIndicator(value: percent, minHeight: 10, backgroundColor: theme.danger.withValues(alpha: 0.15), valueColor: AlwaysStoppedAnimation(theme.success)),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
-              _AnswerStat(
-                label: 'Đúng',
-                value: '$correct',
-                color: AppColors.success,
-                icon: Icons.check_circle_rounded,
-              ),
+              _AnswerStat(label: 'Đúng', value: '$correct', color: theme.success, icon: Icons.check_circle_rounded),
               const SizedBox(width: 12),
-              _AnswerStat(
-                label: 'Sai',
-                value: '$wrong',
-                color: AppColors.danger,
-                icon: Icons.cancel_rounded,
-              ),
+              _AnswerStat(label: 'Sai', value: '$wrong', color: theme.danger, icon: Icons.cancel_rounded),
               const SizedBox(width: 12),
-              _AnswerStat(
-                label: 'Tổng',
-                value: '$total',
-                color: AppColors.primary,
-                icon: Icons.quiz_rounded,
-              ),
+              _AnswerStat(label: 'Tổng', value: '$total', color: theme.primaryColor, icon: Icons.quiz_rounded),
             ],
           ),
         ],
@@ -695,41 +411,21 @@ class _AnswerStat extends StatelessWidget {
   final Color color;
   final IconData icon;
 
-  const _AnswerStat({
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.icon,
-  });
+  const _AnswerStat({required this.label, required this.value, required this.color, required this.icon});
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-        ),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12)),
         child: Column(
           children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                color: color,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              label,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-              ),
-            ),
+            Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(label, style: TextStyle(color: theme.textSecondary, fontSize: 11)),
           ],
         ),
       ),
@@ -737,23 +433,22 @@ class _AnswerStat extends StatelessWidget {
   }
 }
 
-// ─── Chart Card ──────────────────────────────────────────────────────────────────────────────
-
 class _ChartCard extends StatelessWidget {
   final DashboardModel? data;
   const _ChartCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     final total = data?.totalAnswers ?? 0;
     final correct = data?.totalCorrectAnswers ?? 0;
     final wrong = total - correct;
     final score = data?.averageScore ?? 0.0;
 
     final bars = [
-      _BarData('Tổng', total, AppColors.primary),
-      _BarData('Đúng', correct, AppColors.success),
-      _BarData('Sai', wrong, AppColors.danger),
+      _BarData('Tổng', total, theme.primaryColor),
+      _BarData('Đúng', correct, theme.success),
+      _BarData('Sai', wrong, theme.danger),
     ];
     final maxVal = bars.map((b) => b.value).fold(0, (a, b) => a > b ? a : b);
 
@@ -762,66 +457,24 @@ class _ChartCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.9),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.5),
+        boxShadow: [BoxShadow(color: theme.primaryColor.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 8))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.bar_chart_rounded,
-                    color: AppColors.primary, size: 18),
-              ),
+              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: theme.primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Icon(Icons.analytics_rounded, color: theme.primaryColor, size: 18)),
               const SizedBox(width: 10),
-              const Text(
-                'Phân tích kết quả',
-                style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary),
-              ),
+              Text('Phân tích kết quả', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.textPrimary)),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.gradientPrimary.colors.first.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Điểm TB: ${score.toStringAsFixed(1)}/10',
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary),
-                ),
-              ),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: theme.gradientPrimary.colors.first.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)), child: Text('Điểm TB: ${score.toStringAsFixed(1)}/10', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.primaryColor))),
             ],
           ),
           const SizedBox(height: 24),
           if (total == 0)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Text('Chưa có dữ liệu',
-                    style: TextStyle(color: AppColors.textHint)),
-              ),
-            )
+            Center(child: Padding(padding: const EdgeInsets.symmetric(vertical: 20), child: Text('Chưa có dữ liệu', style: TextStyle(color: theme.textHint))))
           else
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -832,69 +485,30 @@ class _ChartCard extends StatelessWidget {
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text(
-                      '${bar.value}',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: bar.color),
-                    ),
+                    Text('${bar.value}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: bar.color)),
                     const SizedBox(height: 6),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 600),
-                      curve: Curves.easeOut,
-                      width: 48,
-                      height: barH.clamp(4.0, 120.0),
-                      decoration: BoxDecoration(
-                        color: bar.color,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                    AnimatedContainer(duration: const Duration(milliseconds: 600), curve: Curves.easeOut, width: 48, height: barH.clamp(4.0, 120.0), decoration: BoxDecoration(color: bar.color, borderRadius: BorderRadius.circular(8))),
                     const SizedBox(height: 8),
-                    Text(
-                      bar.label,
-                      style: const TextStyle(
-                          fontSize: 11, color: AppColors.textSecondary),
-                    ),
+                    Text(bar.label, style: TextStyle(fontSize: 11, color: theme.textSecondary)),
                   ],
                 );
               }).toList(),
             ),
           const SizedBox(height: 16),
-          // Score gauge
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Hiệu suất học tập',
-                      style: TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary)),
-                  Text(
-                    '${((score / 10) * 100).toStringAsFixed(0)}%',
-                    style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary),
-                  ),
+                  Text('Hiệu suất học tập', style: TextStyle(fontSize: 12, color: theme.textSecondary)),
+                  Text('${((score / 10) * 100).toStringAsFixed(0)}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.primaryColor)),
                 ],
               ),
               const SizedBox(height: 6),
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(
-                  value: (score / 10).clamp(0.0, 1.0),
-                  minHeight: 8,
-                  backgroundColor: AppColors.background,
-                  valueColor: AlwaysStoppedAnimation(
-                    score >= 8
-                        ? AppColors.success
-                        : score >= 5
-                            ? AppColors.warning
-                            : AppColors.danger,
-                  ),
-                ),
+                child: LinearProgressIndicator(value: (score / 10).clamp(0.0, 1.0), minHeight: 8, backgroundColor: theme.background, valueColor: AlwaysStoppedAnimation(score >= 8 ? theme.success : score >= 5 ? theme.warning : theme.danger)),
               ),
             ],
           ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../provider/exam_provider.dart';
 
 class ResultScreen extends StatelessWidget {
@@ -9,17 +9,18 @@ class ResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     final exam = context.read<ExamProvider>().currentExam;
     if (exam == null) {
       return Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: theme.background,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: AppColors.textHint),
+              Icon(Icons.error_outline, size: 64, color: theme.textHint),
               const SizedBox(height: 16),
-              const Text('Không có dữ liệu kết quả', style: TextStyle(color: AppColors.textSecondary)),
+              Text('Không có dữ liệu kết quả', style: TextStyle(color: theme.textSecondary)),
               const SizedBox(height: 16),
               ElevatedButton(onPressed: () => context.go('/home'), child: const Text('Về trang chủ')),
             ],
@@ -32,14 +33,14 @@ class ResultScreen extends StatelessWidget {
     final isExcellent = score >= 8;
     final isPass = score >= 5;
     final gradient = isExcellent
-        ? AppColors.gradientAccent
+        ? theme.gradientAccent
         : isPass
             ? const LinearGradient(
                 colors: [Color(0xFFFFAA00), Color(0xFFFF8C00)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
-            : AppColors.gradientWarm;
+            : theme.gradientWarm;
 
     final emoji = isExcellent ? '🎉' : isPass ? '👍' : '💪';
     final message = isExcellent ? 'Xuất sắc!' : isPass ? 'Khá tốt!' : 'Cố gắng hơn!';
@@ -47,19 +48,19 @@ class ResultScreen extends StatelessWidget {
     final total = exam.totalQuestions;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: theme.surface,
+        foregroundColor: theme.textPrimary,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text('Kết quả bài thi', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           TextButton.icon(
             onPressed: () => context.go('/home'),
-            icon: const Icon(Icons.home_rounded, size: 18, color: AppColors.primary),
-            label: const Text('Trang chủ',
-                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+            icon: Icon(Icons.home_rounded, size: 18, color: theme.primaryColor),
+            label: Text('Trang chủ',
+                style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -136,15 +137,15 @@ class ResultScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: theme.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.list_alt_rounded, color: AppColors.primary, size: 18),
+                    child: Icon(Icons.list_alt_rounded, color: theme.primaryColor, size: 18),
                   ),
                   const SizedBox(width: 10),
-                  const Text('Chi tiết từng câu',
+                  Text('Chi tiết từng câu',
                       style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                          fontSize: 16, fontWeight: FontWeight.bold, color: theme.textPrimary)),
                 ],
               ),
               const SizedBox(height: 14),
@@ -152,14 +153,14 @@ class ResultScreen extends StatelessWidget {
                 final a = e.value;
                 final isCorrect = a.correct;
                 final borderColor = isCorrect
-                    ? AppColors.success.withValues(alpha: 0.3)
-                    : AppColors.danger.withValues(alpha: 0.3);
+                    ? theme.success.withValues(alpha: 0.3)
+                    : theme.danger.withValues(alpha: 0.3);
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: theme.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: borderColor, width: 1.5),
                   ),
@@ -172,8 +173,8 @@ class ResultScreen extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: isCorrect
-                                  ? AppColors.success.withValues(alpha: 0.12)
-                                  : AppColors.danger.withValues(alpha: 0.12),
+                                  ? theme.success.withValues(alpha: 0.12)
+                                  : theme.danger.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
@@ -181,13 +182,13 @@ class ResultScreen extends StatelessWidget {
                               children: [
                                 Icon(
                                   isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                                  color: isCorrect ? AppColors.success : AppColors.danger,
+                                  color: isCorrect ? theme.success : theme.danger,
                                   size: 14,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(isCorrect ? 'Đúng' : 'Sai',
                                     style: TextStyle(
-                                        color: isCorrect ? AppColors.success : AppColors.danger,
+                                        color: isCorrect ? theme.success : theme.danger,
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold)),
                               ],
@@ -195,20 +196,20 @@ class ResultScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text('Câu ${e.key + 1}',
-                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                              style: TextStyle(color: theme.textSecondary, fontSize: 12)),
                         ],
                       ),
                       const SizedBox(height: 10),
                       Text(a.questionContent,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontWeight: FontWeight.w600, fontSize: 13, height: 1.5,
-                              color: AppColors.textPrimary)),
+                              color: theme.textPrimary)),
                       const SizedBox(height: 10),
                       if (!isCorrect) ...[
                         _AnswerRow(
                           label: 'Bạn chọn',
                           text: a.selectedChoice,
-                          color: AppColors.danger,
+                          color: theme.danger,
                           icon: Icons.close_rounded,
                         ),
                         const SizedBox(height: 6),
@@ -216,14 +217,14 @@ class ResultScreen extends StatelessWidget {
                       _AnswerRow(
                         label: 'Đáp án',
                         text: a.correctChoice,
-                        color: AppColors.success,
+                        color: theme.success,
                         icon: Icons.check_rounded,
                       ),
                       const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.background,
+                          color: theme.background,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
@@ -232,9 +233,9 @@ class ResultScreen extends StatelessWidget {
                             const Text('💡 ', style: TextStyle(fontSize: 13)),
                             Expanded(
                               child: Text(a.explanation,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.textSecondary,
+                                      color: theme.textSecondary,
                                       height: 1.5)),
                             ),
                           ],
@@ -283,6 +284,7 @@ class _AnswerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -291,7 +293,7 @@ class _AnswerRow extends StatelessWidget {
         Text('$label: ', style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
         Expanded(
             child: Text(text,
-                style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.4))),
+                style: TextStyle(fontSize: 12, color: theme.textPrimary, height: 1.4))),
       ],
     );
   }

@@ -47,7 +47,14 @@ class QuizProvider extends ChangeNotifier {
       if (e is DioException) {
         final data = e.response?.data;
         if (data is Map && data['message'] != null) {
-          error = data['message'].toString();
+          final msg = data['message'].toString().toLowerCase();
+          if (msg.contains('token') || msg.contains('quota') || msg.contains('limit') || msg.contains('gemini') || msg.contains('ai')) {
+            error = 'Dịch vụ AI tạm thời không khả dụng. Vui lòng thử lại sau.';
+          } else {
+            error = data['message'].toString();
+          }
+        } else if (e.response?.statusCode == 500) {
+          error = 'Lỗi máy chủ. Vui lòng thử lại sau.';
         } else {
           error = e.message ?? 'Không thể tạo đề. Vui lòng thử lại.';
         }

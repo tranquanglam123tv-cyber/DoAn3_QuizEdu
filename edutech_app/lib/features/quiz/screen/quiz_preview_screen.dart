@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../model/quiz_model.dart';
 
 class QuizPreviewScreen extends StatelessWidget {
@@ -10,11 +11,12 @@ class QuizPreviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     final diffColor = quiz.difficulty == 'EASY'
-        ? AppColors.success
+        ? theme.success
         : quiz.difficulty == 'MEDIUM'
-            ? AppColors.warning
-            : AppColors.danger;
+            ? theme.warning
+            : theme.danger;
     final diffLabel = quiz.difficulty == 'EASY'
         ? 'Dễ'
         : quiz.difficulty == 'MEDIUM'
@@ -22,10 +24,10 @@ class QuizPreviewScreen extends StatelessWidget {
             : 'Khó';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: theme.surface,
+        foregroundColor: theme.textPrimary,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -47,11 +49,11 @@ class QuizPreviewScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: AppColors.gradientPrimary,
+                      gradient: theme.gradientPrimary,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.3),
+                          color: theme.primaryColor.withValues(alpha: 0.3),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -131,24 +133,24 @@ class QuizPreviewScreen extends StatelessWidget {
                   // Questions list
                   Row(
                     children: [
-                      const Text('Danh sách câu hỏi',
+                      Text('Danh sách câu hỏi',
                           style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary)),
+                              color: theme.textPrimary)),
                       const Spacer(),
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
+                          color: theme.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text('${quiz.questions.length} câu',
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.primary)),
+                                color: theme.primaryColor)),
                       ),
                     ],
                   ),
@@ -160,7 +162,7 @@ class QuizPreviewScreen extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: theme.surface,
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
@@ -175,15 +177,15 @@ class QuizPreviewScreen extends StatelessWidget {
                             width: 28,
                             height: 28,
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.1),
+                              color: theme.primaryColor.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Center(
                               child: Text('${i + 1}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.primary)),
+                                      color: theme.primaryColor)),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -192,17 +194,17 @@ class QuizPreviewScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(q.content,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         fontSize: 13,
                                         height: 1.5,
-                                        color: AppColors.textPrimary),
+                                        color: theme.textPrimary),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis),
                                 const SizedBox(height: 6),
                                 Text('${q.choices.length} lựa chọn',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         fontSize: 11,
-                                        color: AppColors.textHint)),
+                                        color: theme.textHint)),
                               ],
                             ),
                           ),
@@ -219,7 +221,7 @@ class QuizPreviewScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: theme.surface,
               boxShadow: [
                 BoxShadow(
                     color: Colors.black.withValues(alpha: 0.06),

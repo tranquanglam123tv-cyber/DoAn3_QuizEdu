@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class AppColors {
@@ -80,6 +79,58 @@ class AppColors {
 }
 
 class AppTheme {
+  static Widget glassHeader({
+    required BuildContext context,
+    required String title,
+    String? subtitle,
+    VoidCallback? onBack,
+    Color? iconColor,
+    EdgeInsets padding = const EdgeInsets.fromLTRB(20, 12, 20, 18),
+  }) {
+    final theme = context.read<ThemeProvider>();
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        gradient: theme.gradientPrimary,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+      ),
+      child: Row(
+        children: [
+          if (onBack != null)
+            GestureDetector(
+              onTap: onBack,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                ),
+                child: Icon(Icons.arrow_back_ios_new_rounded, color: iconColor ?? Colors.white, size: 18),
+              ),
+            ),
+          if (onBack != null) const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title,
+                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, height: 1.2)),
+                if (subtitle != null && subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(subtitle,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.3)),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   static ThemeData get light => ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(

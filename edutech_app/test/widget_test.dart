@@ -1,4 +1,3 @@
-import 'package:edutech_app/features/admin/provider/admin_provider.dart';
 import 'package:edutech_app/features/auth/provider/auth_provider.dart';
 import 'package:edutech_app/features/document/provider/document_provider.dart';
 import 'package:edutech_app/features/exam/provider/exam_provider.dart';
@@ -20,7 +19,6 @@ void main() {
           ChangeNotifierProvider(create: (_) => QuizProvider()),
           ChangeNotifierProvider(create: (_) => ExamProvider()),
           ChangeNotifierProvider(create: (_) => ProfileProvider()),
-          ChangeNotifierProvider(create: (_) => AdminProvider()),
         ],
         child: const MyApp(),
       ),
