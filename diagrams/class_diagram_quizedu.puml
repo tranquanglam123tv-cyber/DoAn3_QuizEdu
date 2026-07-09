@@ -1,0 +1,688 @@
+@startuml ClassDiagramQuizEdu
+skinparam backgroundColor #FEFEFE
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+title Class Diagram - QuizEdu System
+
+' ============ ENTITY CLASSES ============
+
+package "Entity" {
+
+    class User {
+        - Long id
+        - String email
+        - String password
+        - String fullName
+        - String avatarUrl
+        - User.Gender gender
+        - LocalDate dateOfBirth
+        - Role role
+        - LocalDateTime createdAt
+        - boolean locked
+    }
+
+    class Subject {
+        - Long id
+        - String name
+        - String description
+        - LocalDateTime createdAt
+    }
+
+    class Document {
+        - Long id
+        - String fileName
+        - String fileType
+        - Long fileSize
+        - String filePath
+        - String content
+        - String contentSummary
+        - String contentKeywords
+        - LocalDateTime createdAt
+    }
+
+    class Quiz {
+        - Long id
+        - int questionCount
+        - DifficultyLevel difficulty
+        - LocalDateTime createdAt
+    }
+
+    class Question {
+        - Long id
+        - String content
+        - String explanation
+    }
+
+    class Choice {
+        - Long id
+        - String content
+        - boolean correct
+    }
+
+    class Exam {
+        - Long id
+        - int totalQuestions
+        - int correctCount
+        - double score
+        - ExamStatus status
+        - LocalDateTime startedAt
+        - LocalDateTime submittedAt
+    }
+
+    class ExamAnswer {
+        - Long id
+        - boolean correct
+    }
+
+    class Contact {
+        - Long id
+        - String userName
+        - String email
+        - String subject
+        - String message
+        - ContactStatus status
+        - String adminResponse
+        - LocalDateTime respondedAt
+        - LocalDateTime createdAt
+    }
+
+    class ExportRequest {
+        - Long id
+        - String email
+        - boolean includeDocuments
+        - boolean includeQuizzes
+        - boolean includeHistory
+        - boolean includeStats
+        - ExportStatus status
+        - LocalDateTime createdAt
+        - LocalDateTime processedAt
+    }
+}
+
+' ============ ENUMS ============
+
+package "Enums" {
+    enum Role {
+        STUDENT
+        ADMIN
+    }
+
+    enum User.Gender {
+        MALE
+        FEMALE
+        OTHER
+    }
+
+    enum DifficultyLevel {
+        EASY
+        MEDIUM
+        HARD
+    }
+
+    enum ExamStatus {
+        IN_PROGRESS
+        SUBMITTED
+    }
+
+    enum ContactStatus {
+        PENDING
+        RESPONDED
+        CLOSED
+    }
+
+    enum ExportStatus {
+        PENDING
+        PROCESSING
+        COMPLETED
+        CANCELLED
+    }
+}
+
+' ============ RELATIONSHIPS ============
+
+User "1" --> "*" Subject : creates
+User "1" --> "*" Document : uploads
+User "1" --> "*" Quiz : creates
+User "1" --> "*" Exam : takes
+User "1" --> "*" Contact : sends
+User "1" --> "*" ExportRequest : creates
+
+Subject "1" --> "*" Document : contains
+Document "1" --> "*" Quiz : source for
+
+Quiz "1" --> "*" Question : contains
+Question "1" --> "*" Choice : has
+
+Exam "1" --> "1" Quiz : based on
+Exam "1" --> "1" User : belongs to
+Exam "1" --> "*" ExamAnswer : contains
+
+ExamAnswer "1" --> "1" Question : answers
+ExamAnswer "1" --> "0..1" Choice : selected
+
+' Enums assignments
+User --> Role
+User --> User.Gender
+Quiz --> DifficultyLevel
+Exam --> ExamStatus
+Contact --> ContactStatus
+ExportRequest --> ExportStatus
+
+' ============ DTO - REQUEST ============
+
+package "DTO Request" {
+    class RegisterRequest {
+        - String email
+        - String password
+        - String fullName
+    }
+
+    class LoginRequest {
+        - String email
+        - String password
+    }
+
+    class GoogleLoginRequest {
+        - String idToken
+    }
+
+    class SubjectRequest {
+        - String name
+        - String description
+    }
+
+    class QuizRequest {
+        - Long documentId
+        - int questionCount
+        - String difficulty
+    }
+
+    class SubmitExamRequest {
+        - Long examId
+        - List<ExamAnswerRequest> answers
+    }
+
+    class ExamAnswerRequest {
+        - Long questionId
+        - Long selectedChoiceId
+    }
+
+    class UpdateProfileRequest {
+        - String fullName
+        - User.Gender gender
+        - LocalDate dateOfBirth
+    }
+
+    class ChangePasswordRequest {
+        - String currentPassword
+        - String newPassword
+    }
+
+    class ContactCreateRequest {
+        - String userName
+        - String email
+        - String subject
+        - String message
+    }
+
+    class ExportRequestDto {
+        - String email
+        - boolean includeDocuments
+        - boolean includeQuizzes
+        - boolean includeHistory
+        - boolean includeStats
+    }
+}
+
+' ============ DTO - RESPONSE ============
+
+package "DTO Response" {
+    class ApiResponse<T> {
+        - boolean success
+        - String message
+        - T data
+        + success(data)
+        + success(message, data)
+        + error(message)
+    }
+
+    class AuthResponse {
+        - String token
+        - UserResponse user
+    }
+
+    class UserResponse {
+        - Long id
+        - String email
+        - String fullName
+        - String avatarUrl
+        - User.Gender gender
+        - Role role
+        - LocalDateTime createdAt
+    }
+
+    class UserListResponse {
+        - Long id
+        - String email
+        - String fullName
+        - String avatarUrl
+        - Role role
+        - boolean locked
+        - LocalDateTime createdAt
+    }
+
+    class SubjectResponse {
+        - Long id
+        - String name
+        - String description
+        - LocalDateTime createdAt
+        - int documentCount
+    }
+
+    class DocumentResponse {
+        - Long id
+        - String fileName
+        - String fileType
+        - Long fileSize
+        - String contentSummary
+        - LocalDateTime createdAt
+    }
+
+    class QuizResponse {
+        - Long id
+        - Long documentId
+        - int questionCount
+        - DifficultyLevel difficulty
+        - LocalDateTime createdAt
+        - List<QuestionResponse> questions
+    }
+
+    class QuestionResponse {
+        - Long id
+        - String content
+        - String explanation
+        - List<ChoiceResponse> choices
+    }
+
+    class ChoiceResponse {
+        - Long id
+        - String content
+        - boolean correct
+    }
+
+    class ExamResponse {
+        - Long id
+        - int totalQuestions
+        - int correctCount
+        - double score
+        - String status
+        - LocalDateTime startedAt
+        - LocalDateTime submittedAt
+        - List<QuestionResponse> questions
+        - List<ExamAnswerResponse> answers
+    }
+
+    class ExamAnswerResponse {
+        - Long questionId
+        - Long selectedChoiceId
+        - boolean correct
+        - Long correctChoiceId
+    }
+
+    class SummaryResult {
+        - String overview
+        - List<String> keyPoints
+    }
+
+    class FlashcardResult {
+        - List<FlashcardItem> flashcards
+    }
+
+    class FlashcardItem {
+        - String question
+        - JsonNode answer
+    }
+
+    class QuizResult {
+        - List<QuestionItem> questions
+    }
+
+    class QuestionItem {
+        - String content
+        - String explanation
+        - List<ChoiceItem> choices
+    }
+
+    class ChoiceItem {
+        - String content
+        - boolean correct
+    }
+
+    class ContactResponse {
+        - Long id
+        - String userName
+        - String email
+        - String subject
+        - String message
+        - ContactStatus status
+        - String adminResponse
+        - LocalDateTime respondedAt
+        - LocalDateTime createdAt
+    }
+
+    class ExportRequestResponse {
+        - Long id
+        - String email
+        - boolean includeDocuments
+        - boolean includeQuizzes
+        - boolean includeHistory
+        - boolean includeStats
+        - ExportStatus status
+        - LocalDateTime createdAt
+        - LocalDateTime processedAt
+    }
+
+    class StudentDashboardResponse {
+        - int totalSubjects
+        - int totalDocuments
+        - int totalQuizzes
+        - int totalExams
+        - double averageScore
+    }
+
+    class AdminDashboardResponse {
+        - int totalUsers
+        - int totalSubjects
+        - int totalDocuments
+        - int totalExams
+        - List<MonthlyStats> monthlyStats
+    }
+
+    class SubjectStatsResponse {
+        - Long subjectId
+        - String subjectName
+        - int documentCount
+        - int examCount
+        - double averageScore
+    }
+
+    class DocumentStatsResponse {
+        - Long documentId
+        - String fileName
+        - int examCount
+        - double averageScore
+    }
+}
+
+' ============ CONTROLLERS ============
+
+package "Controllers" {
+    class AuthController {
+        + register(request)
+        + login(request)
+        + google(request)
+    }
+
+    class UserController {
+        + getProfile()
+        + updateProfile(request)
+        + uploadAvatar(file)
+        + changePassword(request)
+    }
+
+    class SubjectController {
+        + create(request)
+        + getAll()
+        + update(id, request)
+        + delete(id)
+    }
+
+    class AdminSubjectController {
+        + getAll()
+        + update(id, request)
+        + delete(id)
+    }
+
+    class DocumentController {
+        + upload(subjectId, file)
+        + getAll(subjectId)
+        + delete(subjectId, id)
+        + batchDelete(subjectId, ids)
+    }
+
+    class QuizController {
+        + generate(request)
+        + getQuiz(quizId)
+        + getAll()
+        + delete(quizId)
+    }
+
+    class ExamController {
+        + start(quizId)
+        + submit(request)
+        + result(examId)
+        + history()
+    }
+
+    class AIController {
+        + summarize(documentId)
+        + flashcards(documentId, count)
+    }
+
+    class ContactController {
+        + createContact(request)
+    }
+
+    class ExportRequestController {
+        + createExportRequest(dto)
+    }
+
+    class DashboardController {
+        + student()
+        + admin()
+        + statsBySubject()
+        + statsByDocument()
+    }
+
+    class AdminController {
+        + getUsers()
+        + getUserDetail(userId)
+        + getContacts()
+        + respondContact(contactId, request)
+        + getExportRequests()
+        + processExportRequest(requestId)
+        + sendExportEmail(requestId)
+        + sendAllPendingExports()
+        + toggleUserLock(userId)
+        + exportUserData(userId)
+        + exportAllData()
+    }
+}
+
+' ============ SERVICES ============
+
+package "Services" {
+    class AuthService {
+        + register(request)
+        + login(request)
+        + googleLogin(request)
+    }
+
+    class UserService {
+        + getProfile()
+        + updateProfile(request)
+        + uploadAvatar(file)
+        + changePassword(request)
+    }
+
+    class SubjectService {
+        + create(request)
+        + getAll()
+        + update(id, request)
+        + delete(id)
+    }
+
+    class DocumentService {
+        + upload(subjectId, file)
+        + getAll(subjectId)
+        + getById(id)
+        + delete(id)
+    }
+
+    class QuizService {
+        + generate(request)
+        + getQuiz(quizId)
+        + getAll()
+        + delete(quizId)
+    }
+
+    class ExamService {
+        + start(quizId)
+        + submit(request)
+        + getResult(examId)
+        + getHistory()
+    }
+
+    class AIService {
+        + summarize(documentId)
+        + generateFlashcards(documentId, count)
+    }
+
+    class GeminiService {
+        + callGemini(prompt)
+        + generateQuiz(content, count, difficulty)
+        + summarizeContent(content)
+        + generateFlashcards(content, count)
+    }
+
+    class ContactService {
+        + createContact(request)
+    }
+
+    class ExportRequestService {
+        + createRequest(dto)
+    }
+
+    class DashboardService {
+        + getStudentDashboard()
+        + getAdminDashboard()
+        + getStatsBySubject()
+        + getStatsByDocument()
+    }
+
+    class AdminService {
+        + getAllUsers()
+        + getUserDetail(userId)
+        + getContacts()
+        + respondContact(contactId, request)
+        + getExportRequests()
+        + processExportRequest(requestId)
+        + sendExportEmail(requestId)
+        + sendAllPendingExports()
+        + toggleUserLock(userId)
+        + exportUserData(userId)
+        + exportAllData()
+    }
+}
+
+' ============ SECURITY ============
+
+package "Security" {
+    class JwtUtil {
+        + generateToken(email, role)
+        + validateToken(token)
+        + getEmailFromToken(token)
+    }
+
+    class JwtAuthenticationFilter {
+        + doFilter(request, response, chain)
+    }
+
+    class SecurityConfig {
+        + securityFilterChain(http)
+    }
+
+    class RateLimitingFilter {
+        + doFilter(request, response, chain)
+    }
+
+    class CorsFilter {
+        + doFilter(request, response, chain)
+    }
+}
+
+' ============ CONFIG ============
+
+package "Config" {
+    class FirebaseConfig
+    class SwaggerConfig
+    class WebMvcConfig
+}
+
+' ============ EXCEPTION ============
+
+package "Exception" {
+    class GlobalExceptionHandler
+    class AiException
+}
+
+' ============ INIT ============
+
+package "Init" {
+    class DataInitializer
+}
+
+' ============ RELATIONSHIPS ============
+
+' Controller -> Service
+AuthController --> AuthService
+UserController --> UserService
+SubjectController --> SubjectService
+AdminSubjectController --> SubjectService
+DocumentController --> DocumentService
+QuizController --> QuizService
+ExamController --> ExamService
+AIController --> AIService
+ContactController --> ContactService
+ExportRequestController --> ExportRequestService
+DashboardController --> DashboardService
+AdminController --> AdminService
+
+' Service -> Entity
+AuthService --> User
+UserService --> User
+SubjectService --> Subject
+DocumentService --> Document
+QuizService --> Quiz
+QuizService --> Question
+QuizService --> Choice
+ExamService --> Exam
+ExamService --> ExamAnswer
+AIService --> Document
+AIService --> Quiz
+AIService --> GeminiService
+ContactService --> Contact
+ExportRequestService --> ExportRequest
+DashboardService --> Exam
+DashboardService --> Subject
+DashboardService --> Document
+AdminService --> User
+AdminService --> Contact
+AdminService --> ExportRequest
+
+' Security uses JwtUtil
+JwtAuthenticationFilter --> JwtUtil
+AuthService --> JwtUtil
+
+' DTO relationships
+QuizResponse --> QuestionResponse
+QuizResponse --> ChoiceResponse
+QuestionResponse --> ChoiceResponse
+ExamResponse --> QuestionResponse
+ExamResponse --> ExamAnswerResponse
+SummaryResult --> FlashcardResult
+QuizResult --> QuestionItem
+QuestionItem --> ChoiceItem
+
+@enduml

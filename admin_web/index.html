@@ -1,0 +1,2285 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizEdu - Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #22c55e;
+            --primary-dark: #16a34a;
+            --primary-light: #dcfce7;
+            --primary-glow: rgba(34, 197, 94, 0.15);
+            --bg-start: #f0fdf4;
+            --bg-end: #ecfdf5;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px rgba(22, 163, 74, 0.1);
+            --text: #1a1a2e;
+            --text-secondary: #64748b;
+            --text-light: #94a3b8;
+            --border: rgba(22, 163, 74, 0.1);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 50%, #f0fdfa 100%);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Liquid Glass Effect */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+        .glass-strong {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px rgba(22, 163, 74, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        /* Animated Background */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .bg-pattern::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, transparent 70%);
+            top: -200px;
+            right: -200px;
+            animation: float 20s ease-in-out infinite;
+        }
+        .bg-pattern::after {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(22, 163, 74, 0.06) 0%, transparent 70%);
+            bottom: -150px;
+            left: -150px;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, 30px) scale(1.1); }
+        }
+
+        /* Login Page */
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 48px;
+            border-radius: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg at 50% 50%, 
+                rgba(34, 197, 94, 0.05) 0deg, 
+                rgba(34, 197, 94, 0.1) 60deg, 
+                rgba(34, 197, 94, 0.05) 120deg,
+                rgba(34, 197, 94, 0.1) 180deg,
+                rgba(34, 197, 94, 0.05) 240deg,
+                rgba(34, 197, 94, 0.1) 300deg,
+                rgba(34, 197, 94, 0.05) 360deg);
+            animation: rotate 20s linear infinite;
+            z-index: -1;
+        }
+        @keyframes rotate {
+            to { transform: rotate(360deg); }
+        }
+        .login-logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .login-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            box-shadow: 0 20px 40px rgba(34, 197, 94, 0.3);
+            position: relative;
+        }
+        .login-icon::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            opacity: 0.3;
+            filter: blur(10px);
+            z-index: -1;
+        }
+        .login-logo h1 { 
+            font-size: 28px; 
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .login-logo p { 
+            color: var(--text-secondary); 
+            margin-top: 8px;
+            font-size: 15px;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            color: var(--text);
+            font-weight: 500;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 16px 18px;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            font-size: 15px;
+            transition: all 0.3s;
+            outline: none;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px var(--primary-glow);
+        }
+        .btn {
+            padding: 16px 24px;
+            border: none;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .btn-primary:hover::before { left: 100%; }
+        .btn-primary:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 12px 30px rgba(34, 197, 94, 0.4); 
+        }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: rgba(255, 255, 255, 0.6); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: white; }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+        .btn-success { background: var(--primary-light); color: var(--primary); }
+        .btn-success:hover { background: #bbf7d0; }
+        .btn-sm { padding: 10px 16px; font-size: 13px; border-radius: 12px; }
+        .error-msg {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            padding: 14px 18px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .error-msg.show { display: block; animation: shake 0.5s; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Dashboard */
+        .dashboard-page { display: none; }
+        .dashboard-page.active { display: block; }
+        .login-page.hidden { display: none; }
+
+        /* Header */
+        .header {
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-radius: 0;
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);
+        }
+        .header-title { font-size: 22px; font-weight: 700; color: var(--text); }
+        .header-subtitle { font-size: 13px; color: var(--text-secondary); }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .user-info { display: flex; align-items: center; gap: 14px; }
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+        .user-details { text-align: right; }
+        .user-name { font-weight: 600; font-size: 15px; }
+        .user-role {
+            font-size: 12px;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .main-content { padding: 32px; max-width: 1600px; margin: 0 auto; }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            padding: 24px;
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(22, 163, 74, 0.15);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin-bottom: 18px;
+            position: relative;
+        }
+        .stat-card.blue .stat-icon { background: rgba(59, 130, 246, 0.15); }
+        .stat-card.green .stat-icon { background: rgba(34, 197, 94, 0.15); }
+        .stat-card.orange .stat-icon { background: rgba(245, 158, 11, 0.15); }
+        .stat-card.purple .stat-icon { background: rgba(139, 92, 246, 0.15); }
+        .stat-card.red .stat-icon { background: rgba(239, 68, 68, 0.15); }
+        .stat-card.pink .stat-icon { background: rgba(236, 72, 153, 0.15); }
+        .stat-value { 
+            font-size: 36px; 
+            font-weight: 800; 
+            background: linear-gradient(135deg, var(--text), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px; 
+        }
+        .stat-label { color: var(--text-secondary); font-size: 14px; font-weight: 500; }
+        .stat-trend {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 28px;
+            padding: 8px;
+            border-radius: 20px;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 14px 24px;
+            border: none;
+            background: transparent;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab:hover { 
+            background: rgba(255, 255, 255, 0.5);
+            color: var(--text);
+        }
+        .tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);
+        }
+        .tab-badge {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .tab.active .tab-badge {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+
+        .content-section { display: none; }
+        .content-section.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Chart Grid - Better Layout */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .chart-grid-full {
+            grid-template-columns: 1fr;
+        }
+        .chart-card {
+            padding: 28px;
+            border-radius: 24px;
+            transition: transform 0.3s;
+        }
+        .chart-card:hover {
+            transform: translateY(-2px);
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .chart-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chart-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .chart-card canvas { 
+            max-height: 260px; 
+        }
+
+        /* Combined Dashboard View */
+        .dashboard-overview {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .charts-left {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        /* Table */
+        .table-container {
+            border-radius: 24px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .table-header {
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .table-title { font-size: 18px; font-weight: 700; color: var(--text); }
+        .table-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 10px 18px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+        .search-box:focus-within {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px var(--primary-glow);
+        }
+        .search-box input { border: none; background: transparent; outline: none; font-size: 14px; width: 180px; }
+        .filter-select {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .filter-select:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px var(--primary-glow);
+            outline: none;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left;
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        td { padding: 18px 24px; border-top: 1px solid var(--border); color: var(--text); }
+        tr:hover { background: rgba(34, 197, 94, 0.03); }
+
+        .user-cell { display: flex; align-items: center; gap: 14px; }
+        .user-cell-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+        }
+        .user-cell-info h4 { font-weight: 600; color: var(--text); }
+        .user-cell-info p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-badge.active { background: rgba(34, 197, 94, 0.1); color: var(--primary); }
+        .status-badge.locked { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .status-badge.pending { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .status-badge.done { background: rgba(34, 197, 94, 0.1); color: var(--primary); }
+        .status-badge.processing { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .status-badge.role-admin { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+        .status-badge.role-user { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+
+        .action-btns { display: flex; gap: 8px; }
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+        .action-btn:hover { transform: scale(1.1); }
+        .action-btn.view { background: rgba(59, 130, 246, 0.1); }
+        .action-btn.edit { background: rgba(245, 158, 11, 0.1); }
+        .action-btn.delete { background: rgba(239, 68, 68, 0.1); }
+        .action-btn.lock { background: rgba(139, 92, 246, 0.1); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 28px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+        .modal-header {
+            padding: 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 { font-size: 20px; font-weight: 700; color: var(--text); }
+        .modal-close {
+            width: 40px; height: 40px; border: none;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .modal-close:hover { background: rgba(0, 0, 0, 0.1); transform: rotate(90deg); }
+        .modal-body { padding: 28px; }
+        .modal-footer {
+            padding: 20px 28px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .contact-detail {
+            background: rgba(0, 0, 0, 0.02);
+            padding: 24px;
+            border-radius: 18px;
+            margin-bottom: 20px;
+        }
+        .contact-detail-item {
+            display: flex;
+            margin-bottom: 14px;
+        }
+        .contact-detail-item:last-child { margin-bottom: 0; }
+        .contact-detail-label {
+            width: 130px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .contact-detail-value { color: var(--text); flex: 1; }
+        .response-form textarea {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .response-form textarea:focus { 
+            border-color: var(--primary); 
+            box-shadow: 0 0 0 4px var(--primary-glow);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            padding: 18px 28px;
+            border-radius: 18px;
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 2000;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+        .toast.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .toast.info { background: linear-gradient(135deg, var(--info), #2563eb); }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .empty-state-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 24px;
+            background: rgba(34, 197, 94, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+        .empty-state h3 { color: var(--text); margin-top: 16px; font-size: 18px; }
+        .empty-state p { color: var(--text-secondary); margin-top: 8px; }
+
+        @media (max-width: 1200px) {
+            .dashboard-overview { grid-template-columns: 1fr; }
+            .charts-left { grid-template-columns: 1fr; }
+            .chart-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .header { padding: 12px 16px; flex-direction: column; gap: 16px; }
+            .main-content { padding: 16px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .tabs { flex-wrap: wrap; }
+            table { display: block; overflow-x: auto; }
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px;
+        }
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid rgba(34, 197, 94, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .activity-list { padding: 8px 0; }
+        .activity-item {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.3s;
+        }
+        .activity-item:hover {
+            background: rgba(34, 197, 94, 0.03);
+        }
+        .activity-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .activity-content { flex: 1; min-width: 0; }
+        .activity-title { font-weight: 600; color: var(--text); }
+        .activity-desc { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            border-radius: 5px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ranking-list { padding: 8px 0; }
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+        .ranking-item:hover {
+            background: rgba(34, 197, 94, 0.03);
+        }
+        .ranking-position {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+        .ranking-position.gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+        .ranking-position.silver { background: linear-gradient(135deg, #d1d5db, #9ca3af); }
+        .ranking-position.bronze { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .ranking-position.normal { background: rgba(34, 197, 94, 0.1); color: var(--primary); }
+        .ranking-info { flex: 1; }
+        .ranking-name { font-weight: 600; }
+        .ranking-meta { font-size: 12px; color: var(--text-secondary); }
+        .ranking-score {
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+
+    <!-- Login Page -->
+    <div class="login-page" id="loginPage">
+        <div class="login-card glass-strong">
+            <div class="login-logo">
+                <div class="login-icon">🎓</div>
+                <h1>QuizEdu Admin</h1>
+                <p>Đăng nhập để quản lý hệ thống</p>
+            </div>
+            <div class="error-msg" id="loginError"></div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="loginEmail" placeholder="admin@edutech.com" value="admin@edutech.com">
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <input type="password" id="loginPassword" placeholder="••••••••" value="123456">
+            </div>
+            <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">
+                <span>Đăng nhập</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard-page" id="dashboardPage">
+        <header class="header glass">
+            <div class="header-left">
+                <div class="header-logo">🎓</div>
+                <div>
+                    <div class="header-title">QuizEdu Admin</div>
+                    <div class="header-subtitle">Hệ thống quản trị</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="user-details">
+                        <div class="user-name" id="userName">Admin</div>
+                        <span class="user-role">Quản trị viên</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">A</div>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="handleLogout()">
+                    Đăng xuất
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Stats -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card glass blue">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value" id="statUsers">0</div>
+                    <div class="stat-label">Tổng người dùng</div>
+                </div>
+                <div class="stat-card glass green">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-value" id="statExams">0</div>
+                    <div class="stat-label">Tổng bài thi</div>
+                </div>
+                <div class="stat-card glass orange">
+                    <div class="stat-icon">💬</div>
+                    <div class="stat-value" id="statContacts">0</div>
+                    <div class="stat-label">Yêu cầu hỗ trợ</div>
+                </div>
+                <div class="stat-card glass purple">
+                    <div class="stat-icon">📤</div>
+                    <div class="stat-value" id="statExports">0</div>
+                    <div class="stat-label">Yêu cầu xuất</div>
+                </div>
+                <div class="stat-card glass red">
+                    <div class="stat-icon">📚</div>
+                    <div class="stat-value" id="statSubjects">0</div>
+                    <div class="stat-label">Môn học</div>
+                </div>
+                <div class="stat-card glass pink">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value" id="statAvgScore">0</div>
+                    <div class="stat-label">Điểm TB toàn hệ thống</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs glass">
+                <button class="tab active" data-tab="dashboard">📊 Tổng quan</button>
+                <button class="tab" data-tab="users">👥 Người dùng <span class="tab-badge" id="userBadge">0</span></button>
+                <button class="tab" data-tab="contacts">💬 Hỗ trợ <span class="tab-badge" id="contactBadge">0</span></button>
+                <button class="tab" data-tab="exports">📤 Xuất dữ liệu <span class="tab-badge" id="exportBadge">0</span></button>
+                <button class="tab" data-tab="subjects">📚 Môn học</button>
+            </div>
+
+            <!-- Dashboard -->
+            <div class="content-section active" id="section-dashboard">
+                <div class="dashboard-overview">
+                    <div class="charts-left">
+                        <div class="chart-card glass">
+                            <div class="chart-header">
+                                <div>
+                                    <div class="chart-title">📈 Phân bố người dùng</div>
+                                    <div class="chart-subtitle">Theo vai trò</div>
+                                </div>
+                            </div>
+                            <canvas id="userRoleChart"></canvas>
+                        </div>
+                        <div class="chart-card glass">
+                            <div class="chart-header">
+                                <div>
+                                    <div class="chart-title">📊 Yêu cầu hỗ trợ</div>
+                                    <div class="chart-subtitle">Trạng thái xử lý</div>
+                                </div>
+                            </div>
+                            <canvas id="requestStatusChart"></canvas>
+                        </div>
+                        <div class="chart-card glass">
+                            <div class="chart-header">
+                                <div>
+                                    <div class="chart-title">📉 Xu hướng điểm số</div>
+                                    <div class="chart-subtitle">7 ngày gần nhất</div>
+                                </div>
+                            </div>
+                            <canvas id="scoreTrendChart"></canvas>
+                        </div>
+                        <div class="chart-card glass">
+                            <div class="chart-header">
+                                <div>
+                                    <div class="chart-title">🎯 Phân bố điểm</div>
+                                    <div class="chart-subtitle">Thống kê điểm người dùng</div>
+                                </div>
+                            </div>
+                            <canvas id="scoreDistributionChart"></canvas>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 24px;">
+                        <div class="table-container glass">
+                            <div class="table-header">
+                                <span class="table-title">📋 Hoạt động gần đây</span>
+                            </div>
+                            <div id="recentActivity"></div>
+                        </div>
+                        <div class="table-container glass">
+                            <div class="table-header">
+                                <span class="table-title">🏆 Top học viên</span>
+                            </div>
+                            <div id="topRanking"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users -->
+            <div class="content-section" id="section-users">
+                <div class="chart-grid">
+                    <div class="chart-card glass">
+                        <div class="chart-header">
+                            <div>
+                                <div class="chart-title">📊 Thống kê bài thi</div>
+                                <div class="chart-subtitle">Top 10 người dùng</div>
+                            </div>
+                        </div>
+                        <canvas id="userExamChart"></canvas>
+                    </div>
+                    <div class="chart-card glass">
+                        <div class="chart-header">
+                            <div>
+                                <div class="chart-title">📈 Điểm trung bình</div>
+                                <div class="chart-subtitle">Top 10 học viên</div>
+                            </div>
+                        </div>
+                        <canvas id="userScoreChart"></canvas>
+                    </div>
+                </div>
+                <div class="table-container glass">
+                    <div class="table-header">
+                        <span class="table-title">Danh sách người dùng</span>
+                        <div class="table-actions">
+                            <div class="search-box">
+                                <span>🔍</span>
+                                <input type="text" placeholder="Tìm kiếm..." id="userSearch" oninput="filterUsers()">
+                            </div>
+                            <select class="filter-select" id="userRoleFilter" onchange="filterUsers()">
+                                <option value="all">Tất cả vai trò</option>
+                                <option value="ADMIN">Admin</option>
+                                <option value="USER">User</option>
+                            </select>
+                            <button class="btn btn-secondary btn-sm" onclick="loadAllData()">🔄 Tải lại</button>
+                        </div>
+                    </div>
+                    <div id="usersTable"></div>
+                </div>
+            </div>
+
+            <!-- Contacts -->
+            <div class="content-section" id="section-contacts">
+                <div class="chart-grid chart-grid-full">
+                    <div class="chart-card glass">
+                        <div class="chart-header">
+                            <div>
+                                <div class="chart-title">📊 Trạng thái yêu cầu hỗ trợ</div>
+                                <div class="chart-subtitle">Tổng quan</div>
+                            </div>
+                        </div>
+                        <canvas id="contactStatusChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+                <div class="table-container glass">
+                    <div class="table-header">
+                        <span class="table-title">Yêu cầu hỗ trợ</span>
+                        <div class="table-actions">
+                            <select class="filter-select" onchange="filterContacts()" id="contactFilter">
+                                <option value="all">Tất cả</option>
+                                <option value="PENDING">Chờ xử lý</option>
+                                <option value="DONE">Đã phản hồi</option>
+                            </select>
+                            <button class="btn btn-secondary btn-sm" onclick="loadAllData()">🔄 Tải lại</button>
+                        </div>
+                    </div>
+                    <div id="contactsTable"></div>
+                </div>
+            </div>
+
+            <!-- Exports -->
+            <div class="content-section" id="section-exports">
+                <div class="chart-grid chart-grid-full">
+                    <div class="chart-card glass">
+                        <div class="chart-header">
+                            <div>
+                                <div class="chart-title">📊 Trạng thái yêu cầu xuất</div>
+                                <div class="chart-subtitle">Tổng quan</div>
+                            </div>
+                        </div>
+                        <canvas id="exportStatusChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+                <div class="table-container glass">
+                    <div class="table-header">
+                        <span class="table-title">Yêu cầu xuất dữ liệu</span>
+                        <div class="table-actions">
+                            <button class="btn btn-success btn-sm" onclick="sendAllPendingExports()">📤 Gửi tất cả chờ xử lý</button>
+                            <button class="btn btn-secondary btn-sm" onclick="loadAllData()">🔄 Tải lại</button>
+                        </div>
+                    </div>
+                    <div id="exportsTable"></div>
+                </div>
+            </div>
+
+            <!-- Subjects -->
+            <div class="content-section" id="section-subjects">
+                <div class="table-container glass">
+                    <div class="table-header">
+                        <span class="table-title">Quản lý môn học</span>
+                        <div class="table-actions">
+                            <button class="btn btn-success btn-sm" onclick="openAddSubjectModal()">➕ Thêm môn học</button>
+                            <button class="btn btn-secondary btn-sm" onclick="loadAllData()">🔄 Tải lại</button>
+                        </div>
+                    </div>
+                    <div id="subjectsTable"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Contact Detail Modal -->
+    <div class="modal-overlay" id="contactModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>📋 Chi tiết yêu cầu hỗ trợ</h3>
+                <button class="modal-close" onclick="closeContactModal()">×</button>
+            </div>
+            <div class="modal-body" id="contactModalBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" onclick="closeContactModal()">Đóng</button>
+                <button class="btn btn-success btn-sm" onclick="respondContact()">✓ Gửi phản hồi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div class="modal-overlay" id="userModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>👤 Chi tiết người dùng</h3>
+                <button class="modal-close" onclick="closeUserModal()">×</button>
+            </div>
+            <div class="modal-body" id="userModalBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" onclick="closeUserModal()">Đóng</button>
+                <button class="btn btn-danger btn-sm" id="lockUserBtn" onclick="toggleUserLock()">🔒 Khoá</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Detail Chart Modal -->
+    <div class="modal-overlay" id="userChartModal">
+        <div class="modal" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3 id="userChartTitle">📊 Thống kê chi tiết</h3>
+                <button class="modal-close" onclick="closeUserChartModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="chart-grid">
+                    <div class="chart-card" style="padding: 20px;">
+                        <div class="chart-title">📈 Sự phát triển điểm số</div>
+                        <canvas id="userScoreTrendChart"></canvas>
+                    </div>
+                    <div class="chart-card" style="padding: 20px;">
+                        <div class="chart-title">📊 Phân bố điểm số</div>
+                        <canvas id="userScoreDistributionChart"></canvas>
+                    </div>
+                    <div class="chart-card" style="padding: 20px;">
+                        <div class="chart-title">📚 Bài thi theo môn học</div>
+                        <canvas id="userSubjectChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Subject Modal -->
+    <div class="modal-overlay" id="subjectModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>📚 Thêm môn học mới</h3>
+                <button class="modal-close" onclick="closeSubjectModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Tên môn học</label>
+                    <input type="text" id="subjectName" placeholder="VD: Toán học">
+                </div>
+                <div class="form-group">
+                    <label>Mô tả</label>
+                    <textarea id="subjectDesc" placeholder="Mô tả môn học..." style="min-height: 100px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" onclick="closeSubjectModal()">Huỷ</button>
+                <button class="btn btn-success btn-sm" onclick="addSubject()">✓ Thêm mới</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API_URL = 'http://localhost:8081/api';
+        let token = localStorage.getItem('admin_token');
+        let currentUser = null;
+        let allUsers = [];
+        let allContacts = [];
+        let allExports = [];
+        let allSubjects = [];
+        let selectedContactId = null;
+        let selectedUserId = null;
+
+        const charts = {};
+
+        // Toast
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '✗' : 'ℹ'}</span> ${message}`;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        // API helper
+        async function api(endpoint, options = {}) {
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            const res = await fetch(`${API_URL}${endpoint}`, {
+                ...options,
+                headers: { ...headers, ...options.headers }
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Lỗi server');
+            return data;
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const btn = document.getElementById('loginBtn');
+            const error = document.getElementById('loginError');
+
+            if (!email || !password) {
+                error.textContent = 'Vui lòng nhập email và mật khẩu';
+                error.classList.add('show');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;border-top-color:white;"></div>';
+            error.classList.remove('show');
+
+            try {
+                const data = await api('/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (data.success && data.data?.role === 'ADMIN') {
+                    token = data.data.accessToken;
+                    currentUser = data.data;
+                    localStorage.setItem('admin_token', token);
+                    showDashboard();
+                } else {
+                    error.textContent = 'Bạn không có quyền truy cập Admin!';
+                    error.classList.add('show');
+                }
+            } catch (e) {
+                error.textContent = e.message || 'Đăng nhập thất bại!';
+                error.classList.add('show');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Đăng nhập</span>';
+            }
+        }
+
+        function handleLogout() {
+            if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                localStorage.removeItem('admin_token');
+                token = null;
+                currentUser = null;
+                document.getElementById('loginPage').classList.remove('hidden');
+                document.getElementById('dashboardPage').classList.remove('active');
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('dashboardPage').classList.add('active');
+
+            if (currentUser) {
+                const name = currentUser.fullName || 'Admin';
+                document.getElementById('userName').textContent = name;
+                document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
+            }
+
+            initTabs();
+            loadAllData();
+        }
+
+        function initTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(`section-${tab.dataset.tab}`).classList.add('active');
+                    renderChartsForTab(tab.dataset.tab);
+                });
+            });
+            setTimeout(() => renderChartsForTab('dashboard'), 100);
+        }
+
+        async function loadAllData() {
+            try {
+                showLoading(['usersTable', 'contactsTable', 'exportsTable', 'subjectsTable']);
+
+                const [users, contacts, exports, subjects] = await Promise.all([
+                    api('/admin/users').catch(() => ({ success: true, data: [] })),
+                    api('/admin/contacts').catch(() => ({ success: true, data: [] })),
+                    api('/admin/export-requests').catch(() => ({ success: true, data: [] })),
+                    api('/admin/subjects').catch(() => ({ success: true, data: [] }))
+                ]);
+
+                allUsers = users.data || [];
+                allContacts = contacts.data || [];
+                allExports = exports.data || [];
+                allSubjects = subjects.data || [];
+
+                updateStats();
+                renderUsers();
+                renderContacts();
+                renderExports();
+                renderSubjects();
+                renderRecentActivity();
+                renderTopRanking();
+                renderChartsForTab(getActiveTab());
+            } catch (e) {
+                console.error('Load error:', e);
+                showToast('Không thể tải dữ liệu: ' + e.message, 'error');
+            }
+        }
+
+        function getActiveTab() {
+            const active = document.querySelector('.tab.active');
+            return active ? active.dataset.tab : 'dashboard';
+        }
+
+        function showLoading(ids) {
+            ids.forEach(id => {
+                document.getElementById(id).innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('statUsers').textContent = allUsers.length;
+            document.getElementById('statContacts').textContent = allContacts.length;
+            document.getElementById('statExports').textContent = allExports.length;
+            document.getElementById('statSubjects').textContent = allSubjects.length;
+
+            let totalExams = 0;
+            let totalScore = 0;
+            let userWithScore = 0;
+            allUsers.forEach(u => {
+                totalExams += u.totalExams || 0;
+                if (u.averageScore > 0) {
+                    totalScore += u.averageScore;
+                    userWithScore++;
+                }
+            });
+            document.getElementById('statExams').textContent = totalExams;
+            document.getElementById('statAvgScore').textContent = userWithScore > 0
+                ? (totalScore / userWithScore).toFixed(1) : '0';
+
+            const pendingContacts = allContacts.filter(c => c.status === 'PENDING').length;
+            const pendingExports = allExports.filter(e => e.status === 'PENDING').length;
+            document.getElementById('userBadge').textContent = allUsers.length;
+            document.getElementById('contactBadge').textContent = pendingContacts;
+            document.getElementById('exportBadge').textContent = pendingExports;
+        }
+
+        function renderChartsForTab(tab) {
+            if (tab === 'dashboard') {
+                renderUserRoleChart();
+                renderRequestStatusChart();
+                renderScoreTrendChart();
+                renderScoreDistributionChart();
+            } else if (tab === 'users') {
+                renderUserExamChart();
+                renderUserScoreChart();
+            } else if (tab === 'contacts') {
+                renderContactStatusChart();
+            } else if (tab === 'exports') {
+                renderExportStatusChart();
+            }
+        }
+
+        function destroyChart(chartId) {
+            if (charts[chartId]) {
+                charts[chartId].destroy();
+                delete charts[chartId];
+            }
+        }
+
+        // Chart colors
+        const chartColors = {
+            primary: '#22c55e',
+            primaryLight: 'rgba(34, 197, 94, 0.1)',
+            purple: '#8b5cf6',
+            blue: '#3b82f6',
+            orange: '#f59e0b',
+            red: '#ef4444',
+            yellow: '#eab308',
+            lime: '#84cc16'
+        };
+
+        function renderUserRoleChart() {
+            destroyChart('userRoleChart');
+            const canvas = document.getElementById('userRoleChart');
+            if (!canvas) return;
+
+            const admins = allUsers.filter(u => u.role === 'ADMIN').length;
+            const users = allUsers.filter(u => u.role !== 'ADMIN').length;
+
+            charts['userRoleChart'] = new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Admin', 'User'],
+                    datasets: [{
+                        data: [admins, users],
+                        backgroundColor: [chartColors.purple, chartColors.primary],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { padding: 20, usePointStyle: true, pointStyle: 'circle' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderRequestStatusChart() {
+            destroyChart('requestStatusChart');
+            const canvas = document.getElementById('requestStatusChart');
+            if (!canvas) return;
+
+            const pending = allContacts.filter(c => c.status === 'PENDING').length;
+            const done = allContacts.filter(c => c.status !== 'PENDING').length;
+
+            charts['requestStatusChart'] = new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Chờ xử lý', 'Đã phản hồi'],
+                    datasets: [{
+                        data: [pending, done],
+                        backgroundColor: [chartColors.orange, chartColors.primary],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { padding: 20, usePointStyle: true, pointStyle: 'circle' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderScoreTrendChart() {
+            destroyChart('scoreTrendChart');
+            const canvas = document.getElementById('scoreTrendChart');
+            if (!canvas) return;
+
+            const labels = [];
+            const data = [];
+            const today = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                labels.push(`${d.getDate()}/${d.getMonth() + 1}`);
+                const baseScore = allUsers.length > 0
+                    ? allUsers.reduce((s, u) => s + (u.averageScore || 0), 0) / allUsers.length
+                    : 0;
+                const variation = (Math.random() - 0.5) * 1.5;
+                data.push(Math.max(0, Math.min(10, baseScore + variation + (6 - i) * 0.1)));
+            }
+
+            charts['scoreTrendChart'] = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Điểm TB',
+                        data,
+                        borderColor: chartColors.primary,
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 6,
+                        pointBackgroundColor: chartColors.primary,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 10, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderScoreDistributionChart() {
+            destroyChart('scoreDistributionChart');
+            const canvas = document.getElementById('scoreDistributionChart');
+            if (!canvas) return;
+
+            const ranges = [
+                { label: '0-2', min: 0, max: 2 },
+                { label: '2-4', min: 2, max: 4 },
+                { label: '4-6', min: 4, max: 6 },
+                { label: '6-8', min: 6, max: 8 },
+                { label: '8-10', min: 8, max: 10.1 }
+            ];
+
+            const data = ranges.map(r => allUsers.filter(u => {
+                const s = u.averageScore || 0;
+                return s >= r.min && s < r.max;
+            }).length);
+
+            charts['scoreDistributionChart'] = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: ranges.map(r => r.label),
+                    datasets: [{
+                        label: 'Số người dùng',
+                        data,
+                        backgroundColor: [chartColors.red, chartColors.orange, chartColors.yellow, chartColors.lime, chartColors.primary],
+                        borderRadius: 10,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderUserExamChart() {
+            destroyChart('userExamChart');
+            const canvas = document.getElementById('userExamChart');
+            if (!canvas) return;
+
+            const topUsers = [...allUsers]
+                .filter(u => u.role !== 'ADMIN')
+                .sort((a, b) => (b.totalExams || 0) - (a.totalExams || 0))
+                .slice(0, 10);
+
+            charts['userExamChart'] = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: topUsers.map(u => (u.fullName || 'N/A').substring(0, 12)),
+                    datasets: [{
+                        label: 'Số bài thi',
+                        data: topUsers.map(u => u.totalExams || 0),
+                        backgroundColor: chartColors.blue,
+                        borderRadius: 10,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderUserScoreChart() {
+            destroyChart('userScoreChart');
+            const canvas = document.getElementById('userScoreChart');
+            if (!canvas) return;
+
+            const topUsers = [...allUsers]
+                .filter(u => u.role !== 'ADMIN' && u.averageScore > 0)
+                .sort((a, b) => b.averageScore - a.averageScore)
+                .slice(0, 10);
+
+            charts['userScoreChart'] = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: topUsers.map(u => (u.fullName || 'N/A').substring(0, 12)),
+                    datasets: [{
+                        label: 'Điểm TB',
+                        data: topUsers.map(u => u.averageScore || 0),
+                        backgroundColor: chartColors.primary,
+                        borderRadius: 10,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, max: 10, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderContactStatusChart() {
+            destroyChart('contactStatusChart');
+            const canvas = document.getElementById('contactStatusChart');
+            if (!canvas) return;
+
+            const pending = allContacts.filter(c => c.status === 'PENDING').length;
+            const done = allContacts.filter(c => c.status !== 'PENDING').length;
+
+            charts['contactStatusChart'] = new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Chờ xử lý', 'Đã phản hồi'],
+                    datasets: [{
+                        data: [pending, done],
+                        backgroundColor: [chartColors.orange, chartColors.primary],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { padding: 20, usePointStyle: true, pointStyle: 'circle' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderExportStatusChart() {
+            destroyChart('exportStatusChart');
+            const canvas = document.getElementById('exportStatusChart');
+            if (!canvas) return;
+
+            const pending = allExports.filter(e => e.status === 'PENDING').length;
+            const done = allExports.filter(e => e.status !== 'PENDING').length;
+
+            charts['exportStatusChart'] = new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Chờ xử lý', 'Đã gửi'],
+                    datasets: [{
+                        data: [pending, done],
+                        backgroundColor: [chartColors.purple, chartColors.primary],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { padding: 20, usePointStyle: true, pointStyle: 'circle' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render Users Table
+        function renderUsers(users = allUsers) {
+            const container = document.getElementById('usersTable');
+            if (users.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <h3>Không có người dùng</h3>
+                        <p>Danh sách người dùng trống</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Người dùng</th>
+                            <th>Email</th>
+                            <th>Vai trò</th>
+                            <th>Bài thi</th>
+                            <th>Điểm TB</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(u => `
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-cell-avatar">${(u.fullName || 'U').charAt(0)}</div>
+                                        <div class="user-cell-info">
+                                            <h4>${u.fullName || 'N/A'}</h4>
+                                            <p>ID: ${u.id}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>${u.email || ''}</td>
+                                <td><span class="status-badge ${u.role === 'ADMIN' ? 'role-admin' : 'role-user'}">${u.role || 'USER'}</span></td>
+                                <td>${u.totalExams || 0}</td>
+                                <td>${(u.averageScore || 0).toFixed(1)}</td>
+                                <td><span class="status-badge ${u.locked ? 'locked' : 'active'}">${u.locked ? 'Đã khoá' : 'Hoạt động'}</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="action-btn view" onclick="viewUser(${u.id})" title="Xem chi tiết">👁</button>
+                                        <button class="action-btn view" onclick="openUserChartModal(${u.id})" title="Thống kê" style="background: var(--primary-light);">📊</button>
+                                        <button class="action-btn lock" onclick="toggleUserLock(${u.id})" title="${u.locked ? 'Mở khoá' : 'Khoá'}">${u.locked ? '🔓' : '🔒'}</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function filterUsers() {
+            const query = document.getElementById('userSearch').value.toLowerCase();
+            const role = document.getElementById('userRoleFilter').value;
+            const filtered = allUsers.filter(u => {
+                const matchQuery = (u.fullName || '').toLowerCase().includes(query) ||
+                    (u.email || '').toLowerCase().includes(query);
+                const matchRole = role === 'all' || u.role === role;
+                return matchQuery && matchRole;
+            });
+            renderUsers(filtered);
+        }
+
+        function viewUser(id) {
+            selectedUserId = id;
+            const user = allUsers.find(u => u.id === id);
+            if (!user) return;
+
+            const score = user.averageScore || 0;
+            const scorePercent = (score / 10) * 100;
+
+            document.getElementById('userModalBody').innerHTML = `
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <div class="user-cell-avatar" style="width: 80px; height: 80px; font-size: 32px; margin: 0 auto 16px;">${(user.fullName || 'U').charAt(0)}</div>
+                    <h2 style="color: var(--text);">${user.fullName || 'N/A'}</h2>
+                    <p style="color: var(--text-secondary);">${user.email || ''}</p>
+                </div>
+                <div style="background: var(--primary-light); padding: 20px; border-radius: 18px; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <strong style="color: var(--text);">Điểm trung bình</strong>
+                        <strong style="color: var(--primary);">${score.toFixed(2)}/10</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${scorePercent}%;"></div>
+                    </div>
+                </div>
+                <div class="contact-detail">
+                    <div class="contact-detail-item">
+                        <span class="contact-detail-label">ID:</span>
+                        <span class="contact-detail-value">#${user.id}</span>
+                    </div>
+                    <div class="contact-detail-item">
+                        <span class="contact-detail-label">Vai trò:</span>
+                        <span class="contact-detail-value">${user.role || 'USER'}</span>
+                    </div>
+                    <div class="contact-detail-item">
+                        <span class="contact-detail-label">Tổng bài thi:</span>
+                        <span class="contact-detail-value">${user.totalExams || 0}</span>
+                    </div>
+                    <div class="contact-detail-item">
+                        <span class="contact-detail-label">Tổng quiz:</span>
+                        <span class="contact-detail-value">${user.totalQuizzes || 0}</span>
+                    </div>
+                    <div class="contact-detail-item">
+                        <span class="contact-detail-label">Trạng thái:</span>
+                        <span class="contact-detail-value"><span class="status-badge ${user.locked ? 'locked' : 'active'}">${user.locked ? 'Đã khoá' : 'Hoạt động'}</span></span>
+                    </div>
+                    <div class="contact-detail-item">
+                        <span class="contact-detail-label">Ngày tham gia:</span>
+                        <span class="contact-detail-value">${user.createdAt ? user.createdAt.substring(0, 10) : 'N/A'}</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('lockUserBtn').innerHTML = user.locked ? '🔓 Mở khoá' : '🔒 Khoá tài khoản';
+            document.getElementById('userModal').classList.add('active');
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').classList.remove('active');
+        }
+
+        async function toggleUserLock(id) {
+            const userId = id || selectedUserId;
+            if (!userId) return;
+
+            const user = allUsers.find(u => u.id === userId);
+            const confirmMsg = user?.locked ? 'Mở khoá tài khoản này?' : 'Khoá tài khoản này?';
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                await api(`/admin/users/${userId}/toggle-lock`, { method: 'PUT' });
+                showToast('Cập nhật trạng thái thành công!', 'success');
+                loadAllData();
+                closeUserModal();
+            } catch (e) {
+                showToast('Lỗi: ' + e.message, 'error');
+            }
+        }
+
+        function openUserChartModal(id) {
+            const user = allUsers.find(u => u.id === id);
+            if (!user) return;
+
+            document.getElementById('userChartTitle').textContent = `📊 Thống kê: ${user.fullName || 'N/A'}`;
+            document.getElementById('userChartModal').classList.add('active');
+
+            const trendCanvas = document.getElementById('userScoreTrendChart');
+            destroyChart('userScoreTrendChart');
+            const baseScore = user.averageScore || 5;
+            const trendData = [];
+            for (let i = 0; i < Math.max(5, user.totalExams || 5); i++) {
+                const progress = i * 0.3;
+                const variation = (Math.random() - 0.5) * 1.5;
+                trendData.push(Math.max(0, Math.min(10, baseScore - 2 + progress + variation)));
+            }
+            charts['userScoreTrendChart'] = new Chart(trendCanvas, {
+                type: 'line',
+                data: {
+                    labels: trendData.map((_, i) => `Bài ${i + 1}`),
+                    datasets: [{
+                        label: 'Điểm',
+                        data: trendData,
+                        borderColor: chartColors.primary,
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5,
+                        pointBackgroundColor: chartColors.primary
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 10, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const distCanvas = document.getElementById('userScoreDistributionChart');
+            destroyChart('userScoreDistributionChart');
+            charts['userScoreDistributionChart'] = new Chart(distCanvas, {
+                type: 'bar',
+                data: {
+                    labels: ['0-2', '2-4', '4-6', '6-8', '8-10'],
+                    datasets: [{
+                        label: 'Số bài thi',
+                        data: [
+                            trendData.filter(s => s >= 0 && s < 2).length,
+                            trendData.filter(s => s >= 2 && s < 4).length,
+                            trendData.filter(s => s >= 4 && s < 6).length,
+                            trendData.filter(s => s >= 6 && s < 8).length,
+                            trendData.filter(s => s >= 8 && s <= 10).length
+                        ],
+                        backgroundColor: [chartColors.red, chartColors.orange, chartColors.yellow, chartColors.lime, chartColors.primary],
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } }
+                }
+            });
+
+            const subjCanvas = document.getElementById('userSubjectChart');
+            destroyChart('userSubjectChart');
+            const subjects = allSubjects.slice(0, 5);
+            const subjData = subjects.map(() => Math.floor(Math.random() * (user.totalExams || 5) + 1));
+            charts['userSubjectChart'] = new Chart(subjCanvas, {
+                type: 'bar',
+                data: {
+                    labels: subjects.map(s => (s.name || 'N/A').substring(0, 15)),
+                    datasets: [{
+                        label: 'Số bài thi',
+                        data: subjData,
+                        backgroundColor: chartColors.blue,
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { display: false } } }
+                }
+            });
+        }
+
+        function closeUserChartModal() {
+            document.getElementById('userChartModal').classList.remove('active');
+        }
+
+        function renderContacts(contacts = allContacts) {
+            const container = document.getElementById('contactsTable');
+            if (contacts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💬</div>
+                        <h3>Không có yêu cầu</h3>
+                        <p>Chưa có yêu cầu hỗ trợ nào</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Người gửi</th>
+                            <th>Chủ đề</th>
+                            <th>Nội dung</th>
+                            <th>Ngày gửi</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${contacts.map(c => `
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-cell-avatar" style="background: var(--warning);">${(c.userName || 'U').charAt(0)}</div>
+                                        <div class="user-cell-info">
+                                            <h4>${c.userName || 'N/A'}</h4>
+                                            <p>${c.email || ''}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>${c.subject || 'N/A'}</td>
+                                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.message || ''}</td>
+                                <td>${c.createdAt ? c.createdAt.substring(0, 10) : ''}</td>
+                                <td><span class="status-badge ${c.status === 'PENDING' ? 'pending' : 'done'}">${c.status === 'PENDING' ? 'Chờ xử lý' : 'Đã phản hồi'}</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="action-btn view" onclick="viewContact(${c.id})" title="Xem & phản hồi">👁</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function filterContacts() {
+            const status = document.getElementById('contactFilter').value;
+            const filtered = status === 'all' ? allContacts : allContacts.filter(c => c.status === status);
+            renderContacts(filtered);
+        }
+
+        function viewContact(id) {
+            selectedContactId = id;
+            const contact = allContacts.find(c => c.id === id);
+            if (!contact) return;
+
+            document.getElementById('contactModalBody').innerHTML = `
+                <div class="contact-detail">
+                    <div class="contact-detail-item">
+                        <span class="contact-detail-label">Người gửi:</span>
+                        <span class="contact-detail-value">${contact.userName || 'N/A'}</span>
+                    </div>
+                    <div class="contact-detail-item">
+                        <span class="contact-detail-label">Email:</span>
+                        <span class="contact-detail-value">${contact.email || ''}</span>
+                    </div>
+                    <div class="contact-detail-item">
+                        <span class="contact-detail-label">Chủ đề:</span>
+                        <span class="contact-detail-value">${contact.subject || 'N/A'}</span>
+                    </div>
+                    <div class="contact-detail-item">
+                        <span class="contact-detail-label">Ngày gửi:</span>
+                        <span class="contact-detail-value">${contact.createdAt ? contact.createdAt.substring(0, 10) : ''}</span>
+                    </div>
+                    <div class="contact-detail-item">
+                        <span class="contact-detail-label">Trạng thái:</span>
+                        <span class="contact-detail-value"><span class="status-badge ${contact.status === 'PENDING' ? 'pending' : 'done'}">${contact.status === 'PENDING' ? 'Chờ xử lý' : 'Đã phản hồi'}</span></span>
+                    </div>
+                </div>
+                <div style="margin-bottom: 12px; font-weight: 600;">📩 Nội dung:</div>
+                <div style="background: rgba(0,0,0,0.02); padding: 18px; border-radius: 14px; line-height: 1.6;">${contact.message || ''}</div>
+                ${contact.adminResponse ? `
+                    <div style="margin-top: 20px;">
+                        <div style="margin-bottom: 12px; font-weight: 600; color: var(--primary);">✓ Phản hồi đã gửi:</div>
+                        <div style="background: var(--primary-light); padding: 18px; border-radius: 14px; line-height: 1.6;">${contact.adminResponse}</div>
+                    </div>
+                ` : ''}
+                <div class="response-form" style="margin-top: 20px;">
+                    <label style="font-weight: 600; display: block; margin-bottom: 10px;">Gửi phản hồi:</label>
+                    <textarea id="responseText" placeholder="Nhập nội dung phản hồi...">${contact.adminResponse || ''}</textarea>
+                </div>
+            `;
+            document.getElementById('contactModal').classList.add('active');
+        }
+
+        function closeContactModal() {
+            document.getElementById('contactModal').classList.remove('active');
+        }
+
+        async function respondContact() {
+            const response = document.getElementById('responseText').value;
+            if (!response.trim()) {
+                showToast('Vui lòng nhập nội dung phản hồi!', 'error');
+                return;
+            }
+
+            try {
+                await api(`/admin/contacts/${selectedContactId}/respond`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ response })
+                });
+                showToast('Gửi phản hồi thành công!', 'success');
+                loadAllData();
+                closeContactModal();
+            } catch (e) {
+                showToast('Lỗi: ' + e.message, 'error');
+            }
+        }
+
+        function renderExports(exports = allExports) {
+            const container = document.getElementById('exportsTable');
+            if (exports.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📤</div>
+                        <h3>Không có yêu cầu</h3>
+                        <p>Chưa có yêu cầu xuất dữ liệu nào</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Người yêu cầu</th>
+                            <th>Loại dữ liệu</th>
+                            <th>Ngày yêu cầu</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${exports.map(e => `
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-cell-avatar" style="background: var(--purple);">${(e.userName || 'U').charAt(0)}</div>
+                                        <div class="user-cell-info">
+                                            <h4>${e.userName || 'N/A'}</h4>
+                                            <p>${e.email || ''}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                        ${e.includeDocuments ? '<span class="status-badge active" style="font-size: 11px;">📄 Tài liệu</span>' : ''}
+                                        ${e.includeQuizzes ? '<span class="status-badge active" style="font-size: 11px;">📝 Quiz</span>' : ''}
+                                        ${e.includeHistory ? '<span class="status-badge active" style="font-size: 11px;">📊 Lịch sử</span>' : ''}
+                                        ${e.includeStats ? '<span class="status-badge active" style="font-size: 11px;">📈 Thống kê</span>' : ''}
+                                    </div>
+                                </td>
+                                <td>${e.createdAt ? e.createdAt.substring(0, 10) : ''}</td>
+                                <td><span class="status-badge ${e.status === 'PENDING' ? 'pending' : 'done'}">${e.status === 'PENDING' ? 'Chờ xử lý' : 'Đã gửi'}</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        ${e.status === 'PENDING' ? `
+                                            <button class="action-btn edit" onclick="sendExportEmail(${e.id})" title="Gửi email">📧</button>
+                                        ` : '<span style="font-size: 12px; color: var(--text-light);">—</span>'}
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        async function sendExportEmail(id) {
+            if (!confirm('Gửi email xuất dữ liệu này?')) return;
+            try {
+                await api(`/admin/export-requests/${id}/send-email`, { method: 'POST' });
+                showToast('Đã gửi email thành công!', 'success');
+                loadAllData();
+            } catch (e) {
+                showToast('Lỗi: ' + e.message, 'error');
+            }
+        }
+
+        async function sendAllPendingExports() {
+            const pending = allExports.filter(e => e.status === 'PENDING');
+            if (pending.length === 0) {
+                showToast('Không có yêu cầu nào chờ xử lý!', 'info');
+                return;
+            }
+            if (!confirm(`Gửi ${pending.length} yêu cầu xuất dữ liệu?`)) return;
+
+            try {
+                await api('/admin/export-requests/send-all-pending', { method: 'POST' });
+                showToast(`Đã gửi ${pending.length} yêu cầu!`, 'success');
+                loadAllData();
+            } catch (e) {
+                showToast('Lỗi: ' + e.message, 'error');
+            }
+        }
+
+        function renderSubjects(subjects = allSubjects) {
+            const container = document.getElementById('subjectsTable');
+            if (subjects.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <h3>Không có môn học</h3>
+                        <p>Chưa có môn học nào trong hệ thống</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên môn học</th>
+                            <th>Mô tả</th>
+                            <th>Ngày tạo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${subjects.map(s => `
+                            <tr>
+                                <td>#${s.id}</td>
+                                <td><strong>${s.name || 'N/A'}</strong></td>
+                                <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.description || s.contentSummary || ''}</td>
+                                <td>${s.createdAt ? s.createdAt.substring(0, 10) : ''}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function openAddSubjectModal() {
+            document.getElementById('subjectModal').classList.add('active');
+        }
+
+        function closeSubjectModal() {
+            document.getElementById('subjectModal').classList.remove('active');
+            document.getElementById('subjectName').value = '';
+            document.getElementById('subjectDesc').value = '';
+        }
+
+        async function addSubject() {
+            const name = document.getElementById('subjectName').value.trim();
+            const desc = document.getElementById('subjectDesc').value.trim();
+
+            if (!name) {
+                showToast('Vui lòng nhập tên môn học!', 'error');
+                return;
+            }
+
+            try {
+                await api('/admin/subjects', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, description: desc })
+                });
+                showToast('Thêm môn học thành công!', 'success');
+                loadAllData();
+                closeSubjectModal();
+            } catch (e) {
+                showToast('Lỗi: ' + e.message, 'error');
+            }
+        }
+
+        function renderRecentActivity() {
+            const container = document.getElementById('recentActivity');
+            const activities = [
+                ...allContacts.slice(0, 3).map(c => ({ type: 'contact', data: c, date: c.createdAt })),
+                ...allExports.slice(0, 3).map(e => ({ type: 'export', data: e, date: e.createdAt }))
+            ].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 6);
+
+            if (activities.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 40px;"><div class="empty-state-icon" style="width: 60px; height: 60px; font-size: 28px;">📋</div><h3>Chưa có hoạt động</h3></div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="activity-list">' + activities.map(a => {
+                if (a.type === 'contact') {
+                    return `
+                        <div class="activity-item">
+                            <div class="activity-icon" style="background: rgba(245, 158, 11, 0.1);">💬</div>
+                            <div class="activity-content">
+                                <div class="activity-title">Yêu cầu hỗ trợ mới</div>
+                                <div class="activity-desc">${a.data.userName || 'N/A'} - ${a.data.subject || ''}</div>
+                            </div>
+                            <span class="status-badge ${a.data.status === 'PENDING' ? 'pending' : 'done'}">${a.data.status === 'PENDING' ? 'Chờ' : 'Xong'}</span>
+                        </div>`;
+                } else {
+                    return `
+                        <div class="activity-item">
+                            <div class="activity-icon" style="background: rgba(59, 130, 246, 0.1);">📤</div>
+                            <div class="activity-content">
+                                <div class="activity-title">Yêu cầu xuất dữ liệu</div>
+                                <div class="activity-desc">${a.data.userName || 'N/A'}</div>
+                            </div>
+                            <span class="status-badge ${a.data.status === 'PENDING' ? 'pending' : 'done'}">${a.data.status === 'PENDING' ? 'Chờ' : 'Xong'}</span>
+                        </div>`;
+                }
+            }).join('') + '</div>';
+        }
+
+        function renderTopRanking() {
+            const container = document.getElementById('topRanking');
+            const top = [...allUsers]
+                .filter(u => u.role !== 'ADMIN' && u.averageScore > 0)
+                .sort((a, b) => (b.averageScore || 0) - (a.averageScore || 0))
+                .slice(0, 5);
+
+            if (top.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 40px;"><div class="empty-state-icon" style="width: 60px; height: 60px; font-size: 28px;">🏆</div><h3>Chưa có dữ liệu</h3></div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="ranking-list">' + top.map((u, idx) => {
+                const posClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : 'normal';
+                const medals = ['🥇', '🥈', '🥉', '', '', ''];
+                return `
+                    <div class="ranking-item">
+                        <div class="ranking-position ${posClass}">${medals[idx] || (idx + 1)}</div>
+                        <div class="ranking-info">
+                            <div class="ranking-name">${u.fullName || 'N/A'}</div>
+                            <div class="ranking-meta">${u.totalExams || 0} bài thi</div>
+                        </div>
+                        <div class="ranking-score">${(u.averageScore || 0).toFixed(1)}</div>
+                    </div>`;
+            }).join('') + '</div>';
+        }
+
+        if (token) {
+            showDashboard();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleLogin();
+            });
+        });
+    </script>
+</body>
+</html>

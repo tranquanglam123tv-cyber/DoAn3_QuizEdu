@@ -101,12 +101,22 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final credential = await GoogleAuthHelper.signInWithGoogle();
-      if (credential == null) {
+
+      // On mobile, signInWithRedirect doesn't return credential
+      // We need to get the current user after redirect
+      User? googleUser = credential?.user;
+
+      // Listen for auth state change to get user after redirect
+      if (googleUser == null) {
+        googleUser = await GoogleAuthHelper.getCurrentUser();
+      }
+
+      if (googleUser == null) {
         error = 'Đã hủy đăng nhập Google';
         return false;
       }
 
-      final idToken = await credential.user?.getIdToken();
+      final idToken = await googleUser.getIdToken();
       if (idToken == null) {
         error = 'Không lấy được Google token';
         return false;
@@ -141,7 +151,12 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateCurrentUser({String? fullName, String? avatarUrl, String? gender, String? dateOfBirth}) {
+  void updateCurrentUser({
+    String? fullName,
+    String? avatarUrl,
+    String? gender,
+    String? dateOfBirth,
+  }) {
     if (currentUser == null) return;
     currentUser = AuthModel(
       accessToken: currentUser!.accessToken,

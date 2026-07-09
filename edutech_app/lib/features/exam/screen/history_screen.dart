@@ -13,6 +13,11 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
+  String _selectedFilter = 'Tất cả';
+  String _sortBy = 'Ngày mới nhất';
+
+  final _sortOptions = ['Ngày mới nhất', 'Ngày cũ nhất', 'Điểm cao nhất', 'Điểm thấp nhất'];
+
   @override
   void initState() {
     super.initState();
@@ -26,6 +31,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final theme = context.watch<ThemeProvider>();
     final provider = context.watch<ExamProvider>();
 
+    final filteredHistory = _filterHistory(provider.history);
+
     return Scaffold(
       backgroundColor: theme.background,
       appBar: AppBar(
@@ -38,30 +45,172 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         title: const Text('Lịch sử bài thi', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+          // Sort dropdown
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort_rounded),
+            tooltip: 'Sắp xếp',
+            color: theme.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onSelected: (value) => setState(() => _sortBy = value),
+            itemBuilder: (ctx) => _sortOptions.map((option) {
+              final isSelected = _sortBy == option;
+              IconData icon;
+              switch (option) {
+                case 'Ngày mới nhất': icon = Icons.arrow_downward_rounded; break;
+                case 'Ngày cũ nhất': icon = Icons.arrow_upward_rounded; break;
+                case 'Điểm cao nhất': icon = Icons.trending_up_rounded; break;
+                case 'Điểm thấp nhất': icon = Icons.trending_down_rounded; break;
+                default: icon = Icons.sort_rounded;
+              }
+              return PopupMenuItem<String>(
+                value: option,
+                child: Row(
+                  children: [
+                    Icon(icon, size: 18, color: isSelected ? theme.primaryColor : theme.textSecondary),
+                    const SizedBox(width: 10),
+                    Text(
+                      option,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? theme.primaryColor : theme.textPrimary,
+                      ),
+                    ),
+                    if (isSelected) ...[
+                      const Spacer(),
+                      Icon(Icons.check_rounded, size: 16, color: theme.primaryColor),
+                    ],
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () => provider.fetchHistory(),
           ),
         ],
       ),
-      body: provider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : provider.history.isEmpty
-              ? _EmptyState(theme: theme)
-              : RefreshIndicator(
-                  onRefresh: provider.fetchHistory,
-                  color: theme.primaryColor,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: provider.history.length,
-                    itemBuilder: (ctx, i) => _HistoryCard(
-                      exam: provider.history[i],
-                      theme: theme,
-                      onTap: () => _showDetail(ctx, provider.history[i], theme),
-                    ),
+      body: Column(
+        children: [
+          // Filter chips
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: theme.surface,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _FilterChip(
+                    label: 'Tất cả',
+                    selected: _selectedFilter == 'Tất cả',
+                    onTap: () => setState(() => _selectedFilter = 'Tất cả'),
+                    theme: theme,
                   ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'Đạt',
+                    selected: _selectedFilter == 'Đạt',
+                    onTap: () => setState(() => _selectedFilter = 'Đạt'),
+                    theme: theme,
+                    color: theme.success,
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'Không đạt',
+                    selected: _selectedFilter == 'Không đạt',
+                    onTap: () => setState(() => _selectedFilter = 'Không đạt'),
+                    theme: theme,
+                    color: theme.danger,
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'Đang thi',
+                    selected: _selectedFilter == 'Đang thi',
+                    onTap: () => setState(() => _selectedFilter = 'Đang thi'),
+                    theme: theme,
+                    color: theme.warning,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Results count
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Text(
+                  '${filteredHistory.length} kết quả',
+                  style: TextStyle(fontSize: 13, color: theme.textSecondary),
                 ),
+              ],
+            ),
+          ),
+          // List
+          Expanded(
+            child: provider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredHistory.isEmpty
+                    ? _EmptyState(theme: theme, filter: _selectedFilter)
+                    : RefreshIndicator(
+                        onRefresh: provider.fetchHistory,
+                        color: theme.primaryColor,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: filteredHistory.length,
+                          itemBuilder: (ctx, i) => _HistoryCard(
+                            exam: filteredHistory[i],
+                            theme: theme,
+                            onTap: () => _showDetail(ctx, filteredHistory[i], theme),
+                          ),
+                        ),
+                      ),
+          ),
+        ],
+      ),
     );
+  }
+
+  List<ExamModel> _filterHistory(List<ExamModel> history) {
+    List<ExamModel> filtered;
+    switch (_selectedFilter) {
+      case 'Đạt':
+        filtered = history.where((e) => e.score >= 5).toList();
+        break;
+      case 'Không đạt':
+        filtered = history.where((e) => e.score < 5).toList();
+        break;
+      case 'Đang thi':
+        filtered = history.where((e) => e.status != 'SUBMITTED').toList();
+        break;
+      default:
+        filtered = List.from(history);
+    }
+
+    // Sort
+    switch (_sortBy) {
+      case 'Ngày cũ nhất':
+        filtered.sort((a, b) {
+          final aDate = a.submittedAt != null ? DateTime.tryParse(a.submittedAt!) : DateTime(1970);
+          final bDate = b.submittedAt != null ? DateTime.tryParse(b.submittedAt!) : DateTime(1970);
+          return (aDate ?? DateTime(1970)).compareTo(bDate ?? DateTime(1970));
+        });
+        break;
+      case 'Điểm cao nhất':
+        filtered.sort((a, b) => b.score.compareTo(a.score));
+        break;
+      case 'Điểm thấp nhất':
+        filtered.sort((a, b) => a.score.compareTo(b.score));
+        break;
+      default: // Ngày mới nhất
+        filtered.sort((a, b) {
+          final aDate = a.submittedAt != null ? DateTime.tryParse(a.submittedAt!) : DateTime(1970);
+          final bDate = b.submittedAt != null ? DateTime.tryParse(b.submittedAt!) : DateTime(1970);
+          return (bDate ?? DateTime(1970)).compareTo(aDate ?? DateTime(1970));
+        });
+    }
+
+    return filtered;
   }
 
   void _showDetail(BuildContext context, ExamModel exam, ThemeProvider theme) {
@@ -74,25 +223,87 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 }
 
-class _EmptyState extends StatelessWidget {
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
   final ThemeProvider theme;
-  const _EmptyState({required this.theme});
+  final Color? color;
+
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    required this.theme,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final chipColor = color ?? theme.primaryColor;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? chipColor : chipColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? chipColor : chipColor.withValues(alpha: 0.3),
+            width: 1.5,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.white : chipColor,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final ThemeProvider theme;
+  final String filter;
+
+  const _EmptyState({required this.theme, required this.filter});
+
+  @override
+  Widget build(BuildContext context) {
+    String message;
+    IconData icon;
+
+    if (filter == 'Đạt') {
+      message = 'Chưa có bài thi đạt';
+      icon = Icons.emoji_events_outlined;
+    } else if (filter == 'Không đạt') {
+      message = 'Chưa có bài thi không đạt';
+      icon = Icons.school_outlined;
+    } else if (filter == 'Đang thi') {
+      message = 'Không có bài thi đang thực hiện';
+      icon = Icons.timer_outlined;
+    } else {
+      message = 'Chưa có lịch sử bài thi';
+      icon = Icons.history_rounded;
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.history_rounded, size: 80, color: theme.textHint.withValues(alpha: 0.5)),
+          Icon(icon, size: 80, color: theme.textHint.withValues(alpha: 0.5)),
           const SizedBox(height: 16),
           Text(
-            'Chưa có lịch sử bài thi',
+            message,
             style: TextStyle(fontSize: 16, color: theme.textSecondary, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           Text(
-            'Làm bài thi để xem lại kết quả tại đây',
+            filter == 'Tất cả' ? 'Làm bài thi để xem lại kết quả tại đây' : 'Thử chọn bộ lọc khác',
             style: TextStyle(fontSize: 13, color: theme.textHint),
           ),
         ],

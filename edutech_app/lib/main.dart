@@ -28,6 +28,8 @@ import 'features/dashboard/screen/dashboard_screen.dart';
 import 'features/profile/screen/profile_screen.dart';
 import 'features/profile/provider/profile_provider.dart';
 import 'features/settings/screen/settings_screen.dart';
+import 'features/contact/provider/contact_provider.dart';
+import 'features/contact/screen/contact_history_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +45,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => QuizProvider()),
         ChangeNotifierProvider(create: (_) => ExamProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
+        ChangeNotifierProvider(create: (_) => ContactProvider()),
       ],
       child: const MyApp(),
     ),
@@ -156,6 +159,7 @@ GoRouter _buildRouter(AuthProvider auth) => GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(path: '/settings', builder: (_, s) => const SettingsScreen()),
+            GoRoute(path: '/support', builder: (_, s) => const ContactHistoryScreen()),
           ],
         ),
       ],
@@ -207,26 +211,33 @@ class _SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(gradient: theme.gradientPrimary),
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.school_rounded, color: Colors.white, size: 64),
-              SizedBox(height: 16),
-              Text('QuizEdu',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold)),
-              SizedBox(height: 6),
-              Text('Học thông minh, tiến xa hơn',
-                  style: TextStyle(color: Colors.white70, fontSize: 13)),
-              SizedBox(height: 32),
-              CircularProgressIndicator(color: Colors.white54, strokeWidth: 2),
-            ],
+        child: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: bottomPadding),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.school_rounded, color: Colors.white, size: 64),
+                  SizedBox(height: 16),
+                  Text('QuizEdu',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold)),
+                  SizedBox(height: 6),
+                  Text('Học thông minh, tiến xa hơn',
+                      style: TextStyle(color: Colors.white70, fontSize: 13)),
+                  SizedBox(height: 32),
+                  CircularProgressIndicator(color: Colors.white54, strokeWidth: 2),
+                ],
+              ),
+            ),
           ),
         ),
       ),

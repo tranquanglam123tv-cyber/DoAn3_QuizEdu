@@ -1,0 +1,201 @@
+@startuml ERDQuizEdu
+skinparam backgroundColor #FEFEFE
+skinparam databaseTablenameBackgroundColor #E3F2FD
+skinparam tableBackgroundColor #BBDEFB
+skinparam tableTitleBackgroundColor #1976D2
+skinparam tableTitleFontColor #FFFFFF
+skinparam tableBorderColor #1565C0
+skinparam tableBodyBorderColor #64B5F6
+skinparam fieldBorderColor #90CAF9
+skinparam fieldFontColor #0D47A1
+skinparam primaryKeyFontColor #FFFFFF
+skinparam primaryKeyBackgroundColor #1565C0
+skinparam foreignKeyFontColor #BF360C
+skinparam foreignKeyBackgroundColor #FFCCBC
+
+title ERD Diagram - QuizEdu System
+
+' ============ TABLES ============
+
+entity "users" as users <<TABLE>> {
+    * id : BIGINT (PK) <<IDENTITY>>
+    --
+    email : VARCHAR(255) <<UNIQUE, NOT NULL>>
+    password : VARCHAR(255) <<NOT NULL>>
+    full_name : VARCHAR(255) <<NOT NULL>>
+    avatar_url : VARCHAR(500)
+    gender : ENUM
+    date_of_birth : DATE
+    role : ENUM <<NOT NULL>>
+    locked : BOOLEAN <<NOT NULL, DEFAULT FALSE>>
+    created_at : DATETIME <<NOT NULL>>
+}
+
+entity "subjects" as subjects <<TABLE>> {
+    * id : BIGINT (PK) <<IDENTITY>>
+    --
+    name : VARCHAR(255) <<NOT NULL>>
+    description : TEXT
+    user_id : BIGINT (FK) <<NOT NULL>>
+    created_at : DATETIME <<NOT NULL>>
+}
+
+entity "documents" as documents <<TABLE>> {
+    * id : BIGINT (PK) <<IDENTITY>>
+    --
+    file_name : VARCHAR(255) <<NOT NULL>>
+    file_type : VARCHAR(50) <<NOT NULL>>
+    file_size : BIGINT <<NOT NULL>>
+    file_path : VARCHAR(500) <<NOT NULL>>
+    content : LONGTEXT
+    content_summary : LONGTEXT
+    content_keywords : LONGTEXT
+    subject_id : BIGINT (FK) <<NOT NULL>>
+    user_id : BIGINT (FK) <<NOT NULL>>
+    created_at : DATETIME <<NOT NULL>>
+}
+
+entity "quizzes" as quizzes <<TABLE>> {
+    * id : BIGINT (PK) <<IDENTITY>>
+    --
+    question_count : INT <<NOT NULL>>
+    difficulty : ENUM
+    document_id : BIGINT (FK)
+    user_id : BIGINT (FK)
+    created_at : DATETIME <<NOT NULL>>
+}
+
+entity "questions" as questions <<TABLE>> {
+    * id : BIGINT (PK) <<IDENTITY>>
+    --
+    quiz_id : BIGINT (FK) <<NOT NULL>>
+    content : TEXT <<NOT NULL>>
+    explanation : TEXT
+}
+
+entity "choices" as choices <<TABLE>> {
+    * id : BIGINT (PK) <<IDENTITY>>
+    --
+    question_id : BIGINT (FK) <<NOT NULL>>
+    content : TEXT <<NOT NULL>>
+    correct : BOOLEAN <<NOT NULL>>
+}
+
+entity "exams" as exams <<TABLE>> {
+    * id : BIGINT (PK) <<IDENTITY>>
+    --
+    quiz_id : BIGINT (FK) <<NOT NULL>>
+    user_id : BIGINT (FK) <<NOT NULL>>
+    total_questions : INT <<NOT NULL>>
+    correct_count : INT <<NOT NULL, DEFAULT 0>>
+    score : DECIMAL(5,2) <<NOT NULL>>
+    status : ENUM
+    started_at : DATETIME <<NOT NULL>>
+    submitted_at : DATETIME
+}
+
+entity "exam_answers" as exam_answers <<TABLE>> {
+    * id : BIGINT (PK) <<IDENTITY>>
+    --
+    exam_id : BIGINT (FK) <<NOT NULL>>
+    question_id : BIGINT (FK) <<NOT NULL>>
+    selected_choice_id : BIGINT (FK)
+    correct : BOOLEAN <<NOT NULL>>
+}
+
+entity "contacts" as contacts <<TABLE>> {
+    * id : BIGINT (PK) <<IDENTITY>>
+    --
+    user_name : VARCHAR(255) <<NOT NULL>>
+    email : VARCHAR(255) <<NOT NULL>>
+    subject : VARCHAR(255) <<NOT NULL>>
+    message : TEXT <<NOT NULL>>
+    status : ENUM
+    admin_response : TEXT
+    responded_at : DATETIME
+    created_at : DATETIME <<NOT NULL>>
+}
+
+entity "export_requests" as export_requests <<TABLE>> {
+    * id : BIGINT (PK) <<IDENTITY>>
+    --
+    user_id : BIGINT (FK) <<NOT NULL>>
+    email : VARCHAR(255) <<NOT NULL>>
+    include_documents : BOOLEAN <<NOT NULL>>
+    include_quizzes : BOOLEAN <<NOT NULL>>
+    include_history : BOOLEAN <<NOT NULL>>
+    include_stats : BOOLEAN <<NOT NULL>>
+    status : ENUM
+    created_at : DATETIME <<NOT NULL>>
+    processed_at : DATETIME
+}
+
+' ============ RELATIONSHIPS ============
+
+' User -> Subject (1:N)
+users ||--o{ subjects : "1 creates N"
+
+' User -> Document (1:N)
+users ||--o{ documents : "1 uploads N"
+
+' Subject -> Document (1:N)
+subjects ||--o{ documents : "1 contains N"
+
+' Document -> Quiz (1:N)
+documents ||--o{ quizzes : "1 sources N"
+
+' User -> Quiz (1:N)
+users ||--o{ quizzes : "1 creates N"
+
+' Quiz -> Question (1:N)
+quizzes ||--o{ questions : "1 contains N"
+
+' Question -> Choice (1:N)
+questions ||--o{ choices : "1 has N"
+
+' User -> Exam (1:N)
+users ||--o{ exams : "1 takes N"
+
+' Quiz -> Exam (1:N)
+quizzes ||--o{ exams : "1 generates N"
+
+' Exam -> ExamAnswer (1:N)
+exams ||--o{ exam_answers : "1 contains N"
+
+' Question -> ExamAnswer (1:N)
+questions ||--o{ exam_answers : "1 answered in N"
+
+' Choice -> ExamAnswer (0..1)
+choices ||--o{ exam_answers : "0..1 selected in"
+
+' User -> ExportRequest (1:N)
+users ||--o{ export_requests : "1 requests N"
+
+' ============ ENUM VALUES ============
+
+note "Gender ENUM values: 'MALE', 'FEMALE', 'OTHER'" as N1
+note "Role ENUM values: 'STUDENT', 'ADMIN'" as N2
+note "DifficultyLevel ENUM: 'EASY', 'MEDIUM', 'HARD'" as N3
+note "ExamStatus ENUM: 'IN_PROGRESS', 'SUBMITTED'" as N4
+note "ContactStatus ENUM: 'PENDING', 'RESPONDED', 'CLOSED'" as N5
+note "ExportStatus ENUM: 'PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'" as N6
+
+N1 .. users.gender
+N2 .. users.role
+N3 .. quizzes.difficulty
+N4 .. exams.status
+N5 .. contacts.status
+N6 .. export_requests.status
+
+' ============ LEGEND ============
+
+legend right
+|= Symbol |= Meaning |
+| <<PK>> | Primary Key |
+| <<FK>> | Foreign Key |
+| <<IDENTITY>> | Auto Increment |
+| <<NOT NULL>> | Not Null |
+| ENUM | Stored as VARCHAR |
+endlegend
+
+@enduml

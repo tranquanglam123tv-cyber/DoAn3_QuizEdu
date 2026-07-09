@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../core/api/api_client.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/provider/auth_provider.dart';
 
@@ -160,25 +161,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.description_rounded,
                   label: 'Tài liệu của tôi',
                   selected: selected['Tài liệu của tôi']!,
-                  onChanged: (v) => setState(() => selected['Tài liệu của tôi'] = v ?? false),
+                  onChanged: (v) =>
+                      setState(() => selected['Tài liệu của tôi'] = v ?? false),
                 ),
                 _ExportOption(
                   icon: Icons.quiz_rounded,
                   label: 'Bài kiểm tra',
                   selected: selected['Bài kiểm tra']!,
-                  onChanged: (v) => setState(() => selected['Bài kiểm tra'] = v ?? false),
+                  onChanged: (v) =>
+                      setState(() => selected['Bài kiểm tra'] = v ?? false),
                 ),
                 _ExportOption(
                   icon: Icons.history_rounded,
                   label: 'Lịch sử học tập',
                   selected: selected['Lịch sử học tập']!,
-                  onChanged: (v) => setState(() => selected['Lịch sử học tập'] = v ?? false),
+                  onChanged: (v) =>
+                      setState(() => selected['Lịch sử học tập'] = v ?? false),
                 ),
                 _ExportOption(
                   icon: Icons.bar_chart_rounded,
                   label: 'Thống kê',
                   selected: selected['Thống kê']!,
-                  onChanged: (v) => setState(() => selected['Thống kê'] = v ?? false),
+                  onChanged: (v) =>
+                      setState(() => selected['Thống kê'] = v ?? false),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -189,12 +194,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline_rounded, color: theme.primaryColor, size: 18),
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: theme.primaryColor,
+                        size: 18,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'Đã chọn ${selected.values.where((v) => v).length} mục để xuất',
-                          style: TextStyle(fontSize: 12, color: theme.primaryColor),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.primaryColor,
+                          ),
                         ),
                       ),
                     ],
@@ -208,18 +220,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: const Text('Đóng'),
               ),
               ElevatedButton.icon(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(ctx);
-                  final count = selected.values.where((v) => v).length;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Yêu cầu xuất $count mục đã được gửi!\nFile sẽ được gửi qua email trong 24h.',
-                        style: const TextStyle(fontSize: 13),
+                  try {
+                    await ApiClient.dio.post(
+                      '/export/request',
+                      data: {
+                        'includeDocuments': selected['Tài liệu của tôi'],
+                        'includeQuizzes': selected['Bài kiểm tra'],
+                        'includeHistory': selected['Lịch sử học tập'],
+                        'includeStats': selected['Thống kê'],
+                      },
+                    );
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Yêu cầu xuất dữ liệu đã được gửi!\nFile sẽ được gửi qua email trong 24h.',
+                        ),
+                        backgroundColor: theme.success,
                       ),
-                      backgroundColor: theme.success,
-                    ),
-                  );
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Lỗi: $e'),
+                        backgroundColor: theme.danger,
+                      ),
+                    );
+                  }
                 },
                 icon: const Icon(Icons.send_rounded, size: 18),
                 label: const Text('Gửi yêu cầu'),
@@ -521,6 +551,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 10),
           _SettingsTile(
+            icon: Icons.support_agent_rounded,
+            label: 'Hỗ trợ & Liên hệ',
+            tileColor: Colors.teal,
+            onTap: () => context.go('/support'),
+          ),
+          const SizedBox(height: 10),
+          _SettingsTile(
             icon: Icons.palette_rounded,
             label: 'Đổi màu ứng dụng',
             onTap: () => _showThemeDialog(context),
@@ -575,13 +612,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color? tileColor;
   final VoidCallback? onTap;
 
-  const _SettingsTile({required this.icon, required this.label, this.onTap});
+  const _SettingsTile({required this.icon, required this.label, this.tileColor, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
+    final thisTileColor = tileColor ?? theme.primaryColor;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -605,10 +644,10 @@ class _SettingsTile extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: theme.primaryColor.withValues(alpha: 0.1),
+                    color: thisTileColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: theme.primaryColor, size: 20),
+                  child: Icon(icon, color: thisTileColor, size: 20),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

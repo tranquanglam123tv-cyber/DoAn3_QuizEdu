@@ -171,6 +171,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 12),
                     _AnswerCard(data: _data),
                     const SizedBox(height: 20),
+                    _sectionTitle('Biểu đồ theo môn'),
+                    const SizedBox(height: 12),
+                    _SubjectChartsCard(data: _data),
+                    const SizedBox(height: 20),
                     _sectionTitle('Biểu đồ kết quả'),
                     const SizedBox(height: 12),
                     _ChartCard(data: _data),
@@ -325,8 +329,95 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(width: 12),
         Expanded(child: _QuickAction(icon: Icons.auto_awesome_rounded, label: 'AI Tools', color: theme.accent, onTap: () => context.go('/ai-hub'))),
         const SizedBox(width: 12),
-        Expanded(child: _QuickAction(icon: Icons.person_rounded, label: 'Hồ sơ', color: theme.primaryDark, onTap: () => context.go('/profile'))),
+        Expanded(child: _QuickAction(icon: Icons.support_agent_rounded, label: 'Hỗ trợ', color: theme.warning, onTap: () => _showContactDialog(context))),
       ],
+    );
+  }
+
+  void _showContactDialog(BuildContext context) {
+    final theme = context.read<ThemeProvider>();
+    final auth = context.read<AuthProvider>();
+    final nameController = TextEditingController(text: auth.currentUser?.fullName ?? '');
+    final emailController = TextEditingController(text: auth.currentUser?.email ?? '');
+    final subjectController = TextEditingController();
+    final messageController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.support_agent_rounded, color: theme.warning),
+            const SizedBox(width: 8),
+            const Text('Liên hệ hỗ trợ'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: 'Họ tên', prefixIcon: const Icon(Icons.person_outline)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailController,
+                decoration: InputDecoration(labelText: 'Email', prefixIcon: const Icon(Icons.email_outlined)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: subjectController,
+                decoration: InputDecoration(labelText: 'Chủ đề', prefixIcon: const Icon(Icons.title)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: messageController,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  labelText: 'Nội dung',
+                  alignLabelWithHint: true,
+                  prefixIcon: const Padding(padding: EdgeInsets.only(bottom: 60)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Đóng')),
+          ElevatedButton.icon(
+            onPressed: () async {
+              if (nameController.text.isEmpty || emailController.text.isEmpty || subjectController.text.isEmpty || messageController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: const Text('Vui lòng điền đầy đủ thông tin'), backgroundColor: theme.danger),
+                );
+                return;
+              }
+              try {
+                await ApiClient.dio.post('/contact', data: {
+                  'userName': nameController.text,
+                  'email': emailController.text,
+                  'subject': subjectController.text,
+                  'message': messageController.text,
+                });
+                if (!ctx.mounted) return;
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: const Text('Đã gửi yêu cầu hỗ trợ!'), backgroundColor: theme.success),
+                );
+              } catch (e) {
+                if (!ctx.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Lỗi: $e'), backgroundColor: theme.danger),
+                );
+              }
+            },
+            icon: const Icon(Icons.send, size: 18),
+            label: const Text('Gửi'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -734,6 +825,394 @@ class _ChartCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SubjectChartsCard extends StatefulWidget {
+  final DashboardModel? data;
+  const _SubjectChartsCard({required this.data});
+
+  @override
+  State<_SubjectChartsCard> createState() => _SubjectChartsCardState();
+}
+
+class _SubjectChartsCardState extends State<_SubjectChartsCard> {
+  String _filterType = 'all'; // all, high, low, medium
+  String _sortType = 'name'; // name, score, exams
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  List<DocumentStats> get _filteredStats {
+    var stats = widget.data?.documentStats ?? [];
+    
+    // Filter by search
+    if (_searchQuery.isNotEmpty) {
+      stats = stats.where((s) => 
+        s.documentName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+        s.subjectName.toLowerCase().contains(_searchQuery.toLowerCase())
+      ).toList();
+    }
+    
+    // Filter by score type
+    if (_filterType == 'high') {
+      stats = stats.where((s) => s.averageScore >= 8).toList();
+    } else if (_filterType == 'medium') {
+      stats = stats.where((s) => s.averageScore >= 5 && s.averageScore < 8).toList();
+    } else if (_filterType == 'low') {
+      stats = stats.where((s) => s.averageScore < 5).toList();
+    }
+    
+    // Sort
+    switch (_sortType) {
+      case 'score':
+        stats.sort((a, b) => b.averageScore.compareTo(a.averageScore));
+        break;
+      case 'exams':
+        stats.sort((a, b) => b.totalExams.compareTo(a.totalExams));
+        break;
+      default:
+        stats.sort((a, b) => a.documentName.compareTo(b.documentName));
+    }
+    
+    return stats;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
+    final allStats = widget.data?.documentStats ?? [];
+
+    if (allStats.isEmpty) {
+      return _GlassCardLight(
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              children: [
+                Icon(Icons.description_outlined, size: 48, color: theme.textHint.withValues(alpha: 0.5)),
+                const SizedBox(height: 12),
+                Text('Chưa có dữ liệu theo tài liệu', style: TextStyle(color: theme.textHint)),
+                const SizedBox(height: 4),
+                Text('Làm bài thi để xem thống kê', style: TextStyle(fontSize: 12, color: theme.textHint)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return _GlassCardLight(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.analytics_rounded, color: theme.primaryColor, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Kết quả theo tài liệu',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.textPrimary),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_filteredStats.length}/${allStats.length}',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.primaryColor),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Search bar
+          TextField(
+            controller: _searchController,
+            onChanged: (v) => setState(() => _searchQuery = v),
+            decoration: InputDecoration(
+              hintText: 'Tìm kiếm tài liệu...',
+              prefixIcon: Icon(Icons.search, color: theme.textHint),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.clear, color: theme.textHint),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Filter chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _FilterChip(
+                  label: 'Tất cả',
+                  selected: _filterType == 'all',
+                  onTap: () => setState(() => _filterType = 'all'),
+                  theme: theme,
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: 'Giỏi (8+)',
+                  selected: _filterType == 'high',
+                  onTap: () => setState(() => _filterType = 'high'),
+                  theme: theme,
+                  color: theme.success,
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: 'Trung bình (5-8)',
+                  selected: _filterType == 'medium',
+                  onTap: () => setState(() => _filterType = 'medium'),
+                  theme: theme,
+                  color: theme.warning,
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: 'Yếu (<5)',
+                  selected: _filterType == 'low',
+                  onTap: () => setState(() => _filterType = 'low'),
+                  theme: theme,
+                  color: theme.danger,
+                ),
+                const SizedBox(width: 16),
+                Container(
+                  height: 32,
+                  width: 1,
+                  color: theme.textHint.withValues(alpha: 0.2),
+                ),
+                const SizedBox(width: 16),
+                PopupMenuButton<String>(
+                  initialValue: _sortType,
+                  onSelected: (v) => setState(() => _sortType = v),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: theme.textHint.withValues(alpha: 0.3)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.sort, size: 16, color: theme.textSecondary),
+                        const SizedBox(width: 4),
+                        Text('Sắp xếp', style: TextStyle(fontSize: 12, color: theme.textSecondary)),
+                      ],
+                    ),
+                  ),
+                  itemBuilder: (ctx) => [
+                    PopupMenuItem(value: 'name', child: Text(_sortType == 'name' ? '✓ Theo tên' : 'Theo tên')),
+                    PopupMenuItem(value: 'score', child: Text(_sortType == 'score' ? '✓ Theo điểm' : 'Theo điểm')),
+                    PopupMenuItem(value: 'exams', child: Text(_sortType == 'exams' ? '✓ Theo số bài thi' : 'Theo số bài thi')),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Stats list with scroll
+          if (_filteredStats.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Text('Không có kết quả phù hợp', style: TextStyle(color: theme.textHint)),
+              ),
+            )
+          else
+            SizedBox(
+              height: 320,
+              child: ListView.builder(
+                itemCount: _filteredStats.length,
+                itemBuilder: (ctx, index) {
+                  final stat = _filteredStats[index];
+                  final wrong = stat.totalQuestions - stat.totalCorrect;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: _DocumentStatItem(stat: stat, wrong: wrong, theme: theme),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final ThemeProvider theme;
+  final Color? color;
+
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    required this.theme,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final chipColor = color ?? theme.primaryColor;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? chipColor.withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? chipColor : theme.textHint.withValues(alpha: 0.3),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            color: selected ? chipColor : theme.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DocumentStatItem extends StatelessWidget {
+  final DocumentStats stat;
+  final int wrong;
+  final ThemeProvider theme;
+
+  const _DocumentStatItem({
+    required this.stat,
+    required this.wrong,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                stat.documentName,
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: theme.textPrimary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: theme.surface,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                stat.subjectName,
+                style: TextStyle(fontSize: 10, color: theme.textHint),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            height: 28,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: stat.totalCorrect > 0 ? stat.totalCorrect : 1,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.success,
+                      borderRadius: BorderRadius.horizontal(left: Radius.circular(6)),
+                    ),
+                    alignment: Alignment.center,
+                    child: stat.totalCorrect > 0
+                        ? Text('${stat.totalCorrect} đúng', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold))
+                        : null,
+                  ),
+                ),
+                if (wrong > 0)
+                  Expanded(
+                    flex: wrong,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: theme.danger,
+                        borderRadius: BorderRadius.horizontal(right: Radius.circular(6)),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text('$wrong sai', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '${stat.totalExams} bài thi',
+              style: TextStyle(fontSize: 11, color: theme.textHint),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: (stat.averageScore >= 5 ? theme.success : theme.danger).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${stat.averageScore.toStringAsFixed(1)} điểm TB',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: stat.averageScore >= 5 ? theme.success : theme.danger,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

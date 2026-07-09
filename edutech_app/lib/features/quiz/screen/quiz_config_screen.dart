@@ -28,7 +28,7 @@ class _QuizConfigScreenState extends State<QuizConfigScreen> {
     {'value': 'HARD', 'label': 'Khó', 'sub': 'Phân tích và tổng hợp', 'color': theme.danger},
   ];
 
-  final _counts = [5, 10, 20, 40];
+  final _counts = [5, 10, 20, 30];
 
   void _onDifficultySelected(String value) {
     setState(() => _difficulty = value);

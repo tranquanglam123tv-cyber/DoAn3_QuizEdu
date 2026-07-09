@@ -12,9 +12,41 @@ class DocumentProvider extends ChangeNotifier {
   bool isUploading = false;
   String? error;
 
+  // Track selected documents for batch delete
+  final Set<int> _selectedIds = {};
+  Set<int> get selectedIds => Set.unmodifiable(_selectedIds);
+  bool get hasSelection => _selectedIds.isNotEmpty;
+  int get selectionCount => _selectedIds.length;
+
+  bool isSelected(int id) => _selectedIds.contains(id);
+
+  void toggleSelection(int id) {
+    if (_selectedIds.contains(id)) {
+      _selectedIds.remove(id);
+    } else {
+      _selectedIds.add(id);
+    }
+    notifyListeners();
+  }
+
+  void selectAll() {
+    _selectedIds.addAll(documents.map((d) => d.id));
+    notifyListeners();
+  }
+
+  void clearSelection() {
+    _selectedIds.clear();
+    notifyListeners();
+  }
+
+  List<DocumentModel> getSelectedDocuments() {
+    return documents.where((d) => _selectedIds.contains(d.id)).toList();
+  }
+
   Future<void> fetchAll(int subjectId) async {
     isLoading = true;
     error = null;
+    clearSelection();
     notifyListeners();
     try {
       final res = await ApiClient.dio.get('/subjects/$subjectId/documents');
@@ -29,21 +61,42 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
+  // Check if file with same name already exists
+  DocumentModel? findDuplicate(String fileName) {
+    final lowerName = fileName.toLowerCase();
+    try {
+      return documents.firstWhere(
+        (d) => d.fileName.toLowerCase() == lowerName,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Get list of duplicate files
+  List<DocumentModel> findDuplicates(List<String> fileNames) {
+    final duplicates = <DocumentModel>[];
+    for (final name in fileNames) {
+      final dup = findDuplicate(name);
+      if (dup != null) {
+        duplicates.add(dup);
+      }
+    }
+    return duplicates;
+  }
+
   Future<bool> upload(
     int subjectId, {
     required String fileName,
     String? filePath,
     Uint8List? bytes,
+    bool force = false,
   }) async {
     isUploading = true;
     error = null;
     notifyListeners();
 
     try {
-      // Debug info
-      debugPrint('Uploading file: $fileName');
-      debugPrint('Has bytes: ${bytes != null}, Has path: ${filePath != null}');
-      
       final multipartFile = await _buildMultipartFile(
         fileName: fileName,
         filePath: filePath,
@@ -54,13 +107,10 @@ class DocumentProvider extends ChangeNotifier {
         return false;
       }
 
-      debugPrint('MultipartFile created: ${multipartFile.filename}');
-
       final formData = FormData.fromMap({
         'file': multipartFile,
+        if (force) 'force': true, // Override duplicate
       });
-
-      debugPrint('Sending upload request to /subjects/$subjectId/documents');
 
       final res = await ApiClient.dio.post(
         '/subjects/$subjectId/documents',
@@ -80,13 +130,7 @@ class DocumentProvider extends ChangeNotifier {
         },
       );
 
-      debugPrint('Upload response: ${res.data}');
-
-      if (res.data['success'] == true && res.data['data'] != null) {
-        documents = [
-          DocumentModel.fromJson(res.data['data']),
-          ...documents,
-        ];
+      if (res.data['success'] == true) {
         await fetchAll(subjectId);
         return true;
       } else {
@@ -94,16 +138,10 @@ class DocumentProvider extends ChangeNotifier {
         return false;
       }
     } on DioException catch (e) {
-      debugPrint('DioException: ${e.message}');
-      debugPrint('Response: ${e.response?.data}');
-      
-      // Try to parse error from response
       final responseData = e.response?.data;
       if (responseData is Map) {
         if (responseData['message'] != null) {
           error = responseData['message'].toString();
-        } else if (responseData['error'] != null) {
-          error = responseData['error'].toString();
         } else {
           error = _parseError(e, fallback: 'Tải tài liệu thất bại. Vui lòng thử lại.');
         }
@@ -125,12 +163,37 @@ class DocumentProvider extends ChangeNotifier {
     try {
       await ApiClient.dio.delete('/subjects/$subjectId/documents/$id');
       documents.removeWhere((d) => d.id == id);
+      _selectedIds.remove(id);
       notifyListeners();
       return true;
     } catch (e) {
       error = _parseError(e, fallback: 'Không thể xoá tài liệu');
       return false;
     }
+  }
+
+  // Batch delete multiple documents
+  Future<int> deleteBatch(int subjectId, List<int> ids) async {
+    int deletedCount = 0;
+    final errors = <String>[];
+
+    for (final id in ids) {
+      try {
+        await ApiClient.dio.delete('/subjects/$subjectId/documents/$id');
+        documents.removeWhere((d) => d.id == id);
+        _selectedIds.remove(id);
+        deletedCount++;
+      } catch (e) {
+        errors.add('ID $id: ${_parseError(e, fallback: "Lỗi")}');
+      }
+    }
+
+    if (errors.isNotEmpty) {
+      error = 'Xoá thành công $deletedCount/${ids.length}. ${errors.length} thất bại.';
+    }
+
+    notifyListeners();
+    return deletedCount;
   }
 
   Future<MultipartFile?> _buildMultipartFile({
@@ -141,7 +204,6 @@ class DocumentProvider extends ChangeNotifier {
     final contentType = _contentTypeFor(fileName);
     
     if (bytes != null && bytes.isNotEmpty) {
-      debugPrint('Creating MultipartFile from bytes, size: ${bytes.length}');
       return MultipartFile.fromBytes(
         bytes,
         filename: fileName,
@@ -150,7 +212,6 @@ class DocumentProvider extends ChangeNotifier {
     }
     
     if (filePath != null && filePath.isNotEmpty) {
-      debugPrint('Creating MultipartFile from path: $filePath');
       try {
         return MultipartFile.fromFile(
           filePath,
@@ -162,7 +223,6 @@ class DocumentProvider extends ChangeNotifier {
       }
     }
     
-    debugPrint('No bytes or path available for file upload');
     return null;
   }
 
@@ -187,7 +247,6 @@ class DocumentProvider extends ChangeNotifier {
       if (data is Map && data['error'] != null) {
         return data['error'].toString();
       }
-      // Check for Spring validation errors
       if (data is Map && data['errors'] != null) {
         return data['errors'].toString();
       }

@@ -22,31 +22,31 @@ class ThemeProvider extends ChangeNotifier {
   Color get warning => const Color(0xFFD9982E);
 
   LinearGradient get gradientPrimary => LinearGradient(
-        colors: [_primaryColor, primaryDark],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
+    colors: [_primaryColor, primaryDark],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   LinearGradient get gradientAccent => LinearGradient(
-        colors: [accent, _primaryColor],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
+    colors: [accent, _primaryColor],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   LinearGradient get gradientWarm => LinearGradient(
-        colors: [const Color(0xFFD9982E), const Color(0xFFC0392B)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
+    colors: [const Color(0xFFD9982E), const Color(0xFFC0392B)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   List<Color> get cardColors => [
-        _primaryColor,
-        accent,
-        const Color(0xFFD9982E),
-        const Color(0xFFC0392B),
-        const Color(0xFF1F8A4F),
-        accentLight,
-      ];
+    _primaryColor,
+    accent,
+    const Color(0xFFD9982E),
+    const Color(0xFFC0392B),
+    const Color(0xFF1F8A4F),
+    accentLight,
+  ];
 
   static const List<AppColorOption> colorOptions = [
     AppColorOption(
@@ -163,7 +163,9 @@ class ThemeProvider extends ChangeNotifier {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
@@ -172,14 +174,19 @@ class ThemeProvider extends ChangeNotifier {
           foregroundColor: _primaryColor,
           side: BorderSide(color: _primaryColor, width: 1.5),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surfaceVariant,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,

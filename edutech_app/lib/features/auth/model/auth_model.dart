@@ -18,12 +18,22 @@ class AuthModel {
   });
 
   factory AuthModel.fromJson(Map<String, dynamic> json) => AuthModel(
-    accessToken: json['accessToken'] ?? '',
-    fullName: json['fullName'] ?? '',
-    email: json['email'] ?? '',
-    role: json['role'] ?? 'STUDENT',
-    avatarUrl: json['avatarUrl'],
-    gender: json['gender'],
-    dateOfBirth: json['dateOfBirth']?.toString(),
-  );
+        accessToken: json['accessToken'] ?? '',
+        fullName: json['fullName'] ?? '',
+        email: json['email'] ?? '',
+        role: json['role'] ?? 'STUDENT',
+        avatarUrl: json['avatarUrl'],
+        gender: json['gender'],
+        dateOfBirth: json['dateOfBirth']?.toString(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'accessToken': accessToken,
+        'fullName': fullName,
+        'email': email,
+        'role': role,
+        'avatarUrl': avatarUrl,
+        'gender': gender,
+        'dateOfBirth': dateOfBirth,
+      };
 }

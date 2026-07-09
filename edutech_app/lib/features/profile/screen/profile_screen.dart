@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../../core/api/api_client.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/provider/auth_provider.dart';
 import '../provider/profile_provider.dart';
@@ -25,7 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _obscureConfirm = true;
   String _selectedGender = '';
   DateTime? _dateOfBirth;
-  String? _avatarUrl;
 
   @override
   void initState() {
@@ -34,6 +34,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = auth.currentUser;
     _nameCtrl.text = user?.fullName ?? '';
     _emailCtrl.text = user?.email ?? '';
+    _selectedGender = user?.gender ?? '';
+    if (user?.dateOfBirth != null) {
+      _dateOfBirth = DateTime.tryParse(user!.dateOfBirth!);
+    }
   }
 
   @override
@@ -54,11 +58,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ok = await provider.updateProfile(
       auth,
       _nameCtrl.text.trim(),
-      avatarUrl: _avatarUrl,
       gender: _selectedGender.isNotEmpty ? _selectedGender : null,
       dateOfBirth: _dateOfBirth,
     );
     if (mounted && ok) {
+      auth.updateCurrentUser(
+        fullName: _nameCtrl.text.trim(),
+        gender: _selectedGender.isNotEmpty ? _selectedGender : null,
+        dateOfBirth: _dateOfBirth?.toIso8601String(),
+      );
+      setState(() {});
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Cập nhật hồ sơ thành công!'),
@@ -97,10 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
     final provider = context.read<ProfileProvider>();
-    final ok = await provider.changePassword(
-      _oldPassCtrl.text,
-      _newPassCtrl.text,
-    );
+    final ok = await provider.changePassword(_oldPassCtrl.text, _newPassCtrl.text);
     if (mounted && ok) {
       _oldPassCtrl.clear();
       _newPassCtrl.clear();
@@ -124,16 +131,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Đăng xuất',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Đăng xuất', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text('Bạn có chắc muốn đăng xuất không?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Huỷ'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Huỷ')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: theme.danger),
@@ -149,6 +150,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final result = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Chọn ảnh đại diện',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.read<ThemeProvider>().textPrimary),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Chụp ảnh'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Chọn từ thư viện'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+    if (result == null) return;
+
+    try {
+      final XFile? image = await picker.pickImage(source: result, maxWidth: 512, maxHeight: 512, imageQuality: 80);
+      if (image == null || !mounted) return;
+
+      final auth = context.read<AuthProvider>();
+      final provider = context.read<ProfileProvider>();
+      final avatarUrl = await provider.uploadAvatar(auth, image);
+
+      if (avatarUrl != null && mounted) {
+        auth.updateCurrentUser(avatarUrl: avatarUrl);
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cập nhật ảnh đại diện thành công!')),
+        );
+      } else if (mounted && provider.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(provider.error!), backgroundColor: context.read<ThemeProvider>().danger),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: context.read<ThemeProvider>().danger),
+        );
+      }
+    }
+  }
+
   Future<void> _selectDate() async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -157,39 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       firstDate: DateTime(1950),
       lastDate: DateTime(now.year - 5),
     );
-    if (picked != null) {
-      setState(() => _dateOfBirth = picked);
-    }
-  }
-
-  Future<void> _pickAvatar() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512, imageQuality: 80);
-    if (image == null) return;
-    final provider = context.read<ProfileProvider>();
-    final auth = context.read<AuthProvider>();
-    final ok = await provider.uploadAvatar(auth, image);
-    if (!mounted) return;
-    final theme = context.read<ThemeProvider>();
-    if (ok) {
-      final updated = provider.uploadedAvatarUrl;
-      if (updated != null) {
-        setState(() => _avatarUrl = updated);
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Cập nhật ảnh đại diện thành công!'),
-          backgroundColor: theme.success,
-        ),
-      );
-    } else if (provider.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.error!),
-          backgroundColor: theme.danger,
-        ),
-      );
-    }
+    if (picked != null) setState(() => _dateOfBirth = picked);
   }
 
   @override
@@ -200,348 +229,194 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = auth.currentUser;
     final name = user?.fullName ?? '';
     final initials = name.trim().isNotEmpty
-        ? name
-              .trim()
-              .split(' ')
-              .map((w) => w.isNotEmpty ? w[0] : '')
-              .take(2)
-              .join()
-              .toUpperCase()
+        ? name.trim().split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join().toUpperCase()
         : 'U';
 
     return Scaffold(
       backgroundColor: theme.background,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 220,
-            backgroundColor: theme.primaryColor,
-            foregroundColor: Colors.white,
-            automaticallyImplyLeading: false,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(gradient: theme.gradientPrimary),
-                child: SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 8),
-                      Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Colors.white24, Colors.white10],
-                          ),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                        ),
-                        child: Center(
-                          child: Text(
-                            initials,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        user?.fullName ?? '',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        user?.email ?? '',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            title: const Text(
-              'Hồ sơ',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(20),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _ProfileSection(
-                  title: 'Thông tin cá nhân',
-                  icon: Icons.person_rounded,
-                  theme: theme,
-                  children: [
-                    // Avatar
-                    _FieldLabel(label: 'Ảnh đại diện', theme: theme),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: theme.primaryColor.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.person_rounded,
-                            color: theme.primaryColor,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _avatarUrl != null
-                                ? 'Đã chọn ảnh mới'
-                                : 'Chưa có ảnh',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: theme.textSecondary,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: _pickAvatar,
-                          child: Text(
-                            _avatarUrl != null ? 'Đổi ảnh' : 'Chọn ảnh',
-                            style: TextStyle(
-                              color: theme.primaryColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Name
-                    _FieldLabel(label: 'Họ và tên', theme: theme),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _nameCtrl,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.badge_outlined,
-                          color: theme.textSecondary,
-                        ),
-                        hintText: 'Nhập họ và tên',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Gender
-                    _FieldLabel(label: 'Giới tính', theme: theme),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _GenderChip(
-                          label: 'Nam',
-                          value: 'MALE',
-                          selected: _selectedGender,
-                          onTap: () => setState(() => _selectedGender = 'MALE'),
-                          theme: theme,
-                        ),
-                        const SizedBox(width: 10),
-                        _GenderChip(
-                          label: 'Nữ',
-                          value: 'FEMALE',
-                          selected: _selectedGender,
-                          onTap: () =>
-                              setState(() => _selectedGender = 'FEMALE'),
-                          theme: theme,
-                        ),
-                        const SizedBox(width: 10),
-                        _GenderChip(
-                          label: 'Khác',
-                          value: 'OTHER',
-                          selected: _selectedGender,
-                          onTap: () =>
-                              setState(() => _selectedGender = 'OTHER'),
-                          theme: theme,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Date of birth
-                    _FieldLabel(label: 'Ngày sinh', theme: theme),
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: _selectDate,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.surfaceVariant,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.cake_outlined,
-                              color: theme.textSecondary,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _dateOfBirth != null
-                                    ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}'
-                                    : 'Chọn ngày sinh',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: _dateOfBirth != null
-                                      ? theme.textPrimary
-                                      : theme.textHint,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWideScreen = constraints.maxWidth > 600;
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                expandedHeight: isWideScreen ? 160 : 220,
+                backgroundColor: theme.primaryColor,
+                foregroundColor: Colors.white,
+                automaticallyImplyLeading: false,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    decoration: BoxDecoration(gradient: theme.gradientPrimary),
+                    child: SafeArea(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 500),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(height: 8),
+                              GestureDetector(
+                                onTap: _pickImage,
+                                child: Stack(
+                                  children: [
+                                    Container(
+                                      width: 90,
+                                      height: 90,
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(colors: [Colors.white24, Colors.white10]),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 3),
+                                        image: user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty
+                                            ? DecorationImage(
+                                                image: NetworkImage(ApiClient.fixAvatarUrl(user.avatarUrl!)),
+                                                fit: BoxFit.cover,
+                                              )
+                                            : null,
+                                      ),
+                                      child: user?.avatarUrl == null || user!.avatarUrl!.isEmpty
+                                          ? Center(
+                                              child: Text(initials, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                                            )
+                                          : null,
+                                    ),
+                                    Positioned(
+                                      right: 0,
+                                      bottom: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                        child: Icon(Icons.camera_alt_rounded, color: theme.primaryColor, size: 18),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                            Icon(
-                              Icons.calendar_today_rounded,
-                              color: theme.textHint,
-                              size: 18,
-                            ),
-                          ],
+                              const SizedBox(height: 10),
+                              Text(user?.fullName ?? '', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 4),
+                              Text(user?.email ?? '', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                            ],
+                          ),
                         ),
+                      ),
+                    ),
+                  ),
+                ),
+                title: const Text('Hồ sơ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+              SliverPadding(
+                padding: EdgeInsets.all(isWideScreen ? 40 : 20),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: isWideScreen ? 500 : double.infinity),
+                      child: _ProfileSection(
+                        title: 'Thông tin cá nhân',
+                        icon: Icons.person_rounded,
+                        theme: theme,
+                        children: [
+                          _FieldLabel(label: 'Họ và tên', theme: theme),
+                          const SizedBox(height: 8),
+                          TextField(controller: _nameCtrl, decoration: InputDecoration(prefixIcon: Icon(Icons.badge_outlined, color: theme.textSecondary), hintText: 'Nhập họ và tên')),
+                          const SizedBox(height: 16),
+                          _FieldLabel(label: 'Giới tính', theme: theme),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _GenderChip(label: 'Nam', value: 'MALE', selected: _selectedGender, onTap: () => setState(() => _selectedGender = 'MALE'), theme: theme),
+                              _GenderChip(label: 'Nữ', value: 'FEMALE', selected: _selectedGender, onTap: () => setState(() => _selectedGender = 'FEMALE'), theme: theme),
+                              _GenderChip(label: 'Khác', value: 'OTHER', selected: _selectedGender, onTap: () => setState(() => _selectedGender = 'OTHER'), theme: theme),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _FieldLabel(label: 'Ngày sinh', theme: theme),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: _selectDate,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                              decoration: BoxDecoration(color: theme.surfaceVariant, borderRadius: BorderRadius.circular(14)),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.cake_outlined, color: theme.textSecondary, size: 20),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      _dateOfBirth != null ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}' : 'Chọn ngày sinh',
+                                      style: TextStyle(fontSize: 14, color: _dateOfBirth != null ? theme.textPrimary : theme.textHint),
+                                    ),
+                                  ),
+                                  Icon(Icons.calendar_today_rounded, color: theme.textHint, size: 18),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _FieldLabel(label: 'Email', theme: theme),
+                          const SizedBox(height: 8),
+                          TextField(controller: _emailCtrl, readOnly: true, decoration: InputDecoration(prefixIcon: Icon(Icons.email_outlined, color: theme.textSecondary), suffixIcon: Icon(Icons.lock_outline, size: 18, color: theme.textHint))),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: provider.isSaving ? null : _saveProfile,
+                              icon: provider.isSaving ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.save_rounded, size: 18),
+                              label: const Text('Lưu thay đổi'),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // Email (read-only)
-                    _FieldLabel(label: 'Email', theme: theme),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _emailCtrl,
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.email_outlined,
-                          color: theme.textSecondary,
-                        ),
-                        suffixIcon: Icon(
-                          Icons.lock_outline,
-                          size: 18,
-                          color: theme.textHint,
-                        ),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: isWideScreen ? 500 : double.infinity),
+                      child: _ProfileSection(
+                        title: 'Đổi mật khẩu',
+                        icon: Icons.lock_rounded,
+                        theme: theme,
+                        children: [
+                          _PasswordField(controller: _oldPassCtrl, label: 'Mật khẩu hiện tại', obscure: _obscureOld, onToggle: () => setState(() => _obscureOld = !_obscureOld)),
+                          const SizedBox(height: 12),
+                          _PasswordField(controller: _newPassCtrl, label: 'Mật khẩu mới', obscure: _obscureNew, onToggle: () => setState(() => _obscureNew = !_obscureNew)),
+                          const SizedBox(height: 12),
+                          _PasswordField(controller: _confirmPassCtrl, label: 'Xác nhận mật khẩu mới', obscure: _obscureConfirm, onToggle: () => setState(() => _obscureConfirm = !_obscureConfirm)),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: provider.isSaving ? null : _changePassword,
+                              icon: const Icon(Icons.lock_reset_rounded, size: 18),
+                              label: const Text('Đổi mật khẩu'),
+                              style: ElevatedButton.styleFrom(backgroundColor: theme.accentLight),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: provider.isSaving ? null : _saveProfile,
-                        icon: provider.isSaving
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.save_rounded, size: 18),
-                        label: const Text('Lưu thay đổi'),
+                    const SizedBox(height: 16),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: isWideScreen ? 500 : double.infinity),
+                      child: _ProfileSection(
+                        title: 'Tài khoản',
+                        icon: Icons.settings_rounded,
+                        theme: theme,
+                        children: [
+                          _MenuTile(icon: Icons.info_outline_rounded, label: 'Phiên bản ứng dụng', trailing: Text('1.0.0', style: TextStyle(color: theme.textSecondary, fontSize: 13))),
+                          const Divider(height: 1),
+                          _MenuTile(icon: Icons.logout_rounded, label: 'Đăng xuất', iconColor: theme.danger, labelColor: theme.danger, onTap: _logout),
+                        ],
                       ),
                     ),
-                  ],
+                    const SizedBox(height: 32),
+                  ]),
                 ),
-                const SizedBox(height: 16),
-
-                _ProfileSection(
-                  title: 'Đổi mật khẩu',
-                  icon: Icons.lock_rounded,
-                  theme: theme,
-                  children: [
-                    _PasswordField(
-                      controller: _oldPassCtrl,
-                      label: 'Mật khẩu hiện tại',
-                      obscure: _obscureOld,
-                      onToggle: () =>
-                          setState(() => _obscureOld = !_obscureOld),
-                    ),
-                    const SizedBox(height: 12),
-                    _PasswordField(
-                      controller: _newPassCtrl,
-                      label: 'Mật khẩu mới',
-                      obscure: _obscureNew,
-                      onToggle: () =>
-                          setState(() => _obscureNew = !_obscureNew),
-                    ),
-                    const SizedBox(height: 12),
-                    _PasswordField(
-                      controller: _confirmPassCtrl,
-                      label: 'Xác nhận mật khẩu mới',
-                      obscure: _obscureConfirm,
-                      onToggle: () =>
-                          setState(() => _obscureConfirm = !_obscureConfirm),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: provider.isSaving ? null : _changePassword,
-                        icon: const Icon(Icons.lock_reset_rounded, size: 18),
-                        label: const Text('Đổi mật khẩu'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.accentLight,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                _ProfileSection(
-                  title: 'Tài khoản',
-                  icon: Icons.settings_rounded,
-                  theme: theme,
-                  children: [
-                    _MenuTile(
-                      icon: Icons.info_outline_rounded,
-                      label: 'Phiên bản ứng dụng',
-                      trailing: Text(
-                        '1.0.0',
-                        style: TextStyle(
-                          color: theme.textSecondary,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    _MenuTile(
-                      icon: Icons.logout_rounded,
-                      label: 'Đăng xuất',
-                      iconColor: theme.danger,
-                      labelColor: theme.danger,
-                      onTap: _logout,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-              ]),
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -553,12 +428,7 @@ class _ProfileSection extends StatelessWidget {
   final ThemeProvider theme;
   final List<Widget> children;
 
-  const _ProfileSection({
-    required this.title,
-    required this.icon,
-    required this.theme,
-    required this.children,
-  });
+  const _ProfileSection({required this.title, required this.icon, required this.theme, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -571,17 +441,8 @@ class _ProfileSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.9),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: theme.primaryColor.withValues(alpha: 0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.5),
+            boxShadow: [BoxShadow(color: theme.primaryColor.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 6))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -590,21 +451,11 @@ class _ProfileSection extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: theme.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                    decoration: BoxDecoration(color: theme.primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
                     child: Icon(icon, color: theme.primaryColor, size: 18),
                   ),
                   const SizedBox(width: 10),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: theme.textPrimary,
-                    ),
-                  ),
+                  Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.textPrimary)),
                 ],
               ),
               const SizedBox(height: 16),
@@ -620,19 +471,11 @@ class _ProfileSection extends StatelessWidget {
 class _FieldLabel extends StatelessWidget {
   final String label;
   final ThemeProvider theme;
-
   const _FieldLabel({required this.label, required this.theme});
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: TextStyle(
-        fontSize: 12,
-        color: theme.textSecondary,
-        fontWeight: FontWeight.w500,
-      ),
-    );
+    return Text(label, style: TextStyle(fontSize: 12, color: theme.textSecondary, fontWeight: FontWeight.w500));
   }
 }
 
@@ -643,13 +486,7 @@ class _GenderChip extends StatelessWidget {
   final VoidCallback onTap;
   final ThemeProvider theme;
 
-  const _GenderChip({
-    required this.label,
-    required this.value,
-    required this.selected,
-    required this.onTap,
-    required this.theme,
-  });
+  const _GenderChip({required this.label, required this.value, required this.selected, required this.onTap, required this.theme});
 
   @override
   Widget build(BuildContext context) {
@@ -661,21 +498,9 @@ class _GenderChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? theme.primaryColor : theme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? theme.primaryColor
-                : theme.textHint.withValues(alpha: 0.3),
-            width: isSelected ? 2 : 1,
-          ),
+          border: Border.all(color: isSelected ? theme.primaryColor : theme.textHint.withValues(alpha: 0.3), width: isSelected ? 2 : 1),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : theme.textPrimary,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 13,
-          ),
-        ),
+        child: Text(label, style: TextStyle(color: isSelected ? Colors.white : theme.textPrimary, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, fontSize: 13)),
       ),
     );
   }
@@ -687,12 +512,7 @@ class _PasswordField extends StatelessWidget {
   final bool obscure;
   final VoidCallback onToggle;
 
-  const _PasswordField({
-    required this.controller,
-    required this.label,
-    required this.obscure,
-    required this.onToggle,
-  });
+  const _PasswordField({required this.controller, required this.label, required this.obscure, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -703,10 +523,7 @@ class _PasswordField extends StatelessWidget {
         labelText: label,
         prefixIcon: const Icon(Icons.lock_outline),
         suffixIcon: IconButton(
-          icon: Icon(
-            obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-            size: 20,
-          ),
+          icon: Icon(obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
           onPressed: onToggle,
         ),
       ),
@@ -722,14 +539,7 @@ class _MenuTile extends StatelessWidget {
   final Color? labelColor;
   final VoidCallback? onTap;
 
-  const _MenuTile({
-    required this.icon,
-    required this.label,
-    this.trailing,
-    this.iconColor,
-    this.labelColor,
-    this.onTap,
-  });
+  const _MenuTile({required this.icon, required this.label, this.trailing, this.iconColor, this.labelColor, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -740,23 +550,8 @@ class _MenuTile extends StatelessWidget {
         onTap: onTap,
         contentPadding: EdgeInsets.zero,
         leading: Icon(icon, color: iconColor ?? theme.textSecondary, size: 22),
-        title: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: labelColor ?? theme.textPrimary,
-          ),
-        ),
-        trailing:
-            trailing ??
-            (onTap != null
-                ? Icon(
-                    Icons.chevron_right_rounded,
-                    color: theme.textHint,
-                    size: 20,
-                  )
-                : null),
+        title: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: labelColor ?? theme.textPrimary)),
+        trailing: trailing ?? (onTap != null ? Icon(Icons.chevron_right_rounded, color: theme.textHint, size: 20) : null),
       ),
     );
   }

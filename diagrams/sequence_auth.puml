@@ -1,0 +1,155 @@
+@startuml SequenceAuthQuiz
+skinparam backgroundColor #FEFEFE
+skinparam actorStyle awesome
+
+title Sequence Diagram - Authentication Flow
+
+' ============ ACTORS ============
+actor Student as student
+actor Google as google
+
+' ============ PARTICIPANTS ============
+participant "Flutter App" as flutter
+participant "AuthController" as authCtrl
+participant "AuthService" as authSvc
+participant "UserService" as userSvc
+participant "Firebase Auth" as firebase
+participant "MySQL DB" as db
+participant "JWT" as jwt
+
+' ============ REGISTER ============
+group Register Account #LightBlue
+    student -> flutter : 1. Fill register form\n(email, password, fullName)
+    activate flutter
+    
+    flutter -> flutter : 2. Validate input
+    flutter -> authCtrl : 3. POST /api/auth/register
+    activate authCtrl
+    
+    authCtrl -> authSvc : 4. register(request)
+    activate authSvc
+    
+    authSvc -> userSvc : 5. createUser(request)
+    activate userSvc
+    
+    userSvc -> db : 6. INSERT user
+    activate db
+    db --> userSvc : 7. User created
+    deactivate db
+    deactivate userSvc
+    
+    authSvc -> jwt : 8. generateToken(email, role)
+    activate jwt
+    jwt --> authSvc : 9. JWT token
+    deactivate jwt
+    
+    authSvc --> authCtrl : 10. AuthResponse
+    deactivate authSvc
+    
+    authCtrl --> flutter : 11. 201 Created
+    deactivate authCtrl
+    
+    flutter -> flutter : 12. Save token securely
+    deactivate flutter
+    
+    student <-- flutter : 13. Registration successful\nNavigate to Dashboard
+end
+
+' ============ LOGIN ============
+group Login #LightGreen
+    student -> flutter : 1. Enter email and password
+    activate flutter
+    
+    flutter -> authCtrl : 2. POST /api/auth/login
+    activate authCtrl
+    
+    authCtrl -> authSvc : 3. login(request)
+    activate authSvc
+    
+    authSvc -> db : 4. SELECT user WHERE email
+    activate db
+    db --> authSvc : 5. User or null
+    deactivate db
+    
+    alt User found #LightGreen
+        authSvc -> authSvc : 6. Verify password (BCrypt)
+        authSvc -> jwt : 7. generateToken(email, role)
+        activate jwt
+        jwt --> authSvc : 8. JWT token
+        deactivate jwt
+        authSvc --> authCtrl : 9. AuthResponse
+        deactivate authSvc
+        
+        authCtrl --> flutter : 10. 200 OK
+        deactivate authCtrl
+        
+        flutter -> flutter : 11. Save token\nNavigate to Dashboard
+        
+    else User not found #Pink
+        authSvc --> authCtrl : 12. Invalid credentials
+        deactivate authSvc
+        authCtrl --> flutter : 13. 401 Unauthorized
+        deactivate authCtrl
+        student <-- flutter : 14. Show error message
+    end
+    deactivate flutter
+end
+
+' ============ GOOGLE LOGIN ============
+group Google Login #LightYellow
+    student -> flutter : 1. Click Google Sign-In
+    activate flutter
+    
+    flutter -> google : 2. Request Google ID Token
+    activate google
+    
+    google --> flutter : 3. Google ID Token
+    deactivate google
+    
+    flutter -> authCtrl : 4. POST /api/auth/google
+    activate authCtrl
+    
+    authCtrl -> authSvc : 5. googleLogin(request)
+    activate authSvc
+    
+    authSvc -> firebase : 6. verifyIdToken(idToken)
+    activate firebase
+    firebase --> authSvc : 7. Google User Info
+    deactivate firebase
+    
+    authSvc -> userSvc : 8. findOrCreateUser(googleUser)
+    activate userSvc
+    
+    userSvc -> db : 9. SELECT user WHERE email
+    activate db
+    db --> userSvc : 10. User (null or existing)
+    deactivate db
+    
+    alt New User
+        userSvc -> db : 11. INSERT user
+        activate db
+        db --> userSvc : 12. User created
+        deactivate db
+    end
+    
+    userSvc --> authSvc : 13. User
+    deactivate userSvc
+    
+    authSvc -> jwt : 14. generateToken(email, role)
+    activate jwt
+    jwt --> authSvc : 15. JWT token
+    deactivate jwt
+    
+    authSvc --> authCtrl : 16. AuthResponse
+    deactivate authSvc
+    
+    authCtrl --> flutter : 17. 200 OK
+    deactivate authCtrl
+    
+    flutter -> flutter : 18. Save token\nNavigate to Dashboard
+    deactivate flutter
+    
+    student <-- flutter : 19. Login successful
+end
+
+@enduml

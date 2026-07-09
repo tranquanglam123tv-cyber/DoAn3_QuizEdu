@@ -1,0 +1,401 @@
+@startuml SequenceAdminDashboard
+skinparam backgroundColor #FEFEFE
+skinparam actorStyle awesome
+
+title Sequence Diagram - Admin and Dashboard Flow
+
+' ============ ACTORS ============
+actor Admin as admin
+actor Student as student
+
+' ============ PARTICIPANTS ============
+participant "Flutter App" as flutter
+participant "DashboardController" as dashCtrl
+participant "AdminController" as adminCtrl
+participant "ContactController" as contactCtrl
+participant "ExportRequestController" as exportCtrl
+participant "SubjectController" as subjectCtrl
+participant "DashboardService" as dashSvc
+participant "AdminService" as adminSvc
+participant "ContactService" as contactSvc
+participant "ExportRequestService" as exportSvc
+participant "SubjectService" as subjectSvc
+participant "MySQL DB" as db
+
+' ============ 1. STUDENT DASHBOARD ============
+group View Student Dashboard #LightBlue
+    student -> flutter : 1. Navigate to Dashboard
+    activate flutter
+    
+    flutter -> dashCtrl : 2. GET /api/dashboard/student
+    activate dashCtrl
+    
+    dashCtrl -> dashSvc : 3. getStudentDashboard()
+    activate dashSvc
+    
+    dashSvc -> db : 4. SELECT stats\n(subjects, documents, quizzes, exams)
+    activate db
+    db --> dashSvc : 5. Dashboard stats
+    deactivate db
+    deactivate dashSvc
+    deactivate dashCtrl
+    
+    flutter <-- dashCtrl : 6. StudentDashboardResponse
+    deactivate flutter
+    
+    student <-- flutter : 7. Display dashboard\nwith stats cards
+end
+
+' ============ 2. STUDENT STATS BY SUBJECT ============
+group View Stats by Subject #LightGreen
+    student -> flutter : 1. Click Stats by Subject
+    activate flutter
+    
+    flutter -> dashCtrl : 2. GET /api/dashboard/student/stats-by-subject
+    activate dashCtrl
+    
+    dashCtrl -> dashSvc : 3. getStatsBySubject()
+    activate dashSvc
+    
+    dashSvc -> db : 4. SELECT subjects with exam stats
+    activate db
+    db --> dashSvc : 5. List<SubjectStatsResponse>
+    deactivate db
+    deactivate dashSvc
+    deactivate dashCtrl
+    
+    flutter <-- dashCtrl : 6. List<SubjectStatsResponse>
+    deactivate flutter
+    
+    student <-- flutter : 7. Display chart\n(bar chart by subject)
+end
+
+' ============ 3. ADMIN DASHBOARD ============
+group View Admin Dashboard #LightYellow
+    admin -> flutter : 1. Navigate to Admin Dashboard
+    activate flutter
+    
+    flutter -> dashCtrl : 2. GET /api/dashboard/admin
+    activate dashCtrl
+    
+    dashCtrl -> dashSvc : 3. getAdminDashboard()
+    activate dashSvc
+    
+    dashSvc -> db : 4. SELECT counts\n(users, subjects, documents, exams)
+    activate db
+    db --> dashSvc : 5. Dashboard stats
+    deactivate db
+    
+    dashSvc -> db : 6. SELECT monthly stats
+    activate db
+    db --> dashSvc : 7. MonthlyStats list
+    deactivate db
+    deactivate dashSvc
+    deactivate dashCtrl
+    
+    flutter <-- dashCtrl : 8. AdminDashboardResponse
+    deactivate flutter
+    
+    admin <-- flutter : 9. Display admin dashboard\nwith charts
+end
+
+' ============ 4. ADMIN MANAGE USERS ============
+group Admin Manage Users #LightCoral
+    admin -> flutter : 1. Navigate to User Management
+    activate flutter
+    
+    flutter -> adminCtrl : 2. GET /api/admin/users
+    activate adminCtrl
+    
+    adminCtrl -> adminSvc : 3. getAllUsers()
+    activate adminSvc
+    
+    adminSvc -> db : 4. SELECT all users
+    activate db
+    db --> adminSvc : 5. List<UserListResponse>
+    deactivate db
+    deactivate adminSvc
+    deactivate adminCtrl
+    
+    flutter <-- adminCtrl : 6. List<UserListResponse>
+    deactivate flutter
+    
+    admin <-- flutter : 7. Display user list
+    
+    alt Toggle User Lock
+        admin -> flutter : 8. Click Toggle Lock on user
+        activate flutter
+        
+        flutter -> adminCtrl : 9. PUT /api/admin/users/{id}/toggle-lock
+        activate adminCtrl
+        
+        adminCtrl -> adminSvc : 10. toggleUserLock(userId)
+        activate adminSvc
+        
+        adminSvc -> db : 11. UPDATE user SET locked
+        activate db
+        db --> adminSvc : 12. User updated
+        deactivate db
+        deactivate adminSvc
+        deactivate adminCtrl
+        
+        flutter <-- adminCtrl : 13. Updated user
+        deactivate flutter
+        
+        admin <-- flutter : 14. Update UI\n(show lock status)
+    end
+end
+
+' ============ 5. ADMIN MANAGE SUBJECTS ============
+group Admin Manage Subjects #LightGray
+    admin -> flutter : 1. Navigate to Subject Management
+    activate flutter
+    
+    flutter -> subjectCtrl : 2. GET /api/admin/subjects
+    activate subjectCtrl
+    
+    subjectCtrl -> subjectSvc : 3. getAll()
+    activate subjectSvc
+    
+    subjectSvc -> db : 4. SELECT all subjects
+    activate db
+    db --> subjectSvc : 5. List<Subject>
+    deactivate db
+    deactivate subjectSvc
+    deactivate subjectCtrl
+    
+    flutter <-- subjectCtrl : 6. List<SubjectResponse>
+    deactivate flutter
+    
+    admin <-- flutter : 7. Display all subjects
+    
+    alt Update Subject
+        admin -> flutter : 8. Edit subject details\nClick Update
+        activate flutter
+        
+        flutter -> subjectCtrl : 9. PUT /api/admin/subjects/{id}
+        activate subjectCtrl
+        
+        subjectCtrl -> subjectSvc : 10. update(id, request)
+        activate subjectSvc
+        
+        subjectSvc -> db : 11. UPDATE subject
+        activate db
+        db --> subjectSvc : 12. Subject updated
+        deactivate db
+        deactivate subjectSvc
+        deactivate subjectCtrl
+        
+        flutter <-- subjectCtrl : 13. Updated subject
+        deactivate flutter
+        
+        admin <-- flutter : 14. Refresh list
+    end
+    
+    alt Delete Subject
+        admin -> flutter : 15. Click Delete on subject
+        activate flutter
+        
+        flutter -> subjectCtrl : 16. DELETE /api/admin/subjects/{id}
+        activate subjectCtrl
+        
+        subjectCtrl -> subjectSvc : 17. delete(id)
+        activate subjectSvc
+        
+        subjectSvc -> db : 18. DELETE subject (cascade)
+        activate db
+        db --> subjectSvc : 19. Subject deleted
+        deactivate db
+        deactivate subjectSvc
+        deactivate subjectCtrl
+        
+        flutter <-- subjectCtrl : 20. Success
+        deactivate flutter
+        
+        admin <-- flutter : 21. Remove from list
+    end
+end
+
+' ============ 6. ADMIN MANAGE CONTACTS ============
+group Admin Manage Contacts #LightPink
+    admin -> flutter : 1. Navigate to Contact Management
+    activate flutter
+    
+    flutter -> adminCtrl : 2. GET /api/admin/contacts
+    activate adminCtrl
+    
+    adminCtrl -> adminSvc : 3. getContacts()
+    activate adminSvc
+    
+    adminSvc -> db : 4. SELECT contacts
+    activate db
+    db --> adminSvc : 5. List<Contact>
+    deactivate db
+    deactivate adminSvc
+    deactivate adminCtrl
+    
+    flutter <-- adminCtrl : 6. List<ContactResponse>
+    deactivate flutter
+    
+    admin <-- flutter : 7. Display contact list
+    
+    alt Respond to Contact
+        admin -> flutter : 8. Click Respond on contact
+        activate flutter
+        
+        flutter -> adminCtrl : 9. PUT /api/admin/contacts/{id}/respond
+        activate adminCtrl
+        
+        adminCtrl -> adminSvc : 10. respondContact(contactId, request)
+        activate adminSvc
+        
+        adminSvc -> db : 11. UPDATE contact SET response
+        activate db
+        db --> adminSvc : 12. Contact updated
+        deactivate db
+        deactivate adminSvc
+        deactivate adminCtrl
+        
+        flutter <-- adminCtrl : 13. Updated contact
+        deactivate flutter
+        
+        admin <-- flutter : 14. Update status\n(show responded)
+    end
+end
+
+' ============ 7. STUDENT SEND CONTACT ============
+group Student Send Contact #LightBlue
+    student -> flutter : 1. Navigate to Contact form\nFill in details\nClick Send
+    activate flutter
+    
+    flutter -> contactCtrl : 2. POST /api/contact
+    activate contactCtrl
+    
+    contactCtrl -> contactSvc : 3. createContact(request)
+    activate contactSvc
+    
+    contactSvc -> db : 4. INSERT contact
+    activate db
+    db --> contactSvc : 5. Contact created
+    deactivate db
+    deactivate contactSvc
+    deactivate contactCtrl
+    
+    flutter <-- contactCtrl : 6. Success
+    deactivate flutter
+    
+    student <-- flutter : 7. Show success message
+end
+
+' ============ 8. STUDENT REQUEST EXPORT ============
+group Student Request Export #LightGreen
+    student -> flutter : 1. Navigate to Export form\nSelect options\nClick Request
+    activate flutter
+    
+    flutter -> exportCtrl : 2. POST /api/export/request
+    activate exportCtrl
+    
+    exportCtrl -> exportSvc : 3. createRequest(dto)
+    activate exportSvc
+    
+    exportSvc -> db : 4. INSERT export_request
+    activate db
+    db --> exportSvc : 5. ExportRequest created
+    deactivate db
+    deactivate exportSvc
+    deactivate exportCtrl
+    
+    flutter <-- exportCtrl : 6. Success
+    deactivate flutter
+    
+    student <-- flutter : 7. Show confirmation\nEmail will be sent
+end
+
+' ============ 9. ADMIN EXPORT DATA ============
+group Admin Export Data #LightYellow
+    admin -> flutter : 1. Click Export All Data
+    activate flutter
+    
+    flutter -> adminCtrl : 2. GET /api/admin/export/all
+    activate adminCtrl
+    
+    adminCtrl -> adminSvc : 3. exportAllData()
+    activate adminSvc
+    
+    adminSvc -> db : 4. SELECT all data
+    activate db
+    db --> adminSvc : 5. All data
+    deactivate db
+    
+    adminSvc -> adminSvc : 6. Format as JSON
+    adminSvc --> adminCtrl : 7. JSON string
+    deactivate adminSvc
+    deactivate adminCtrl
+    
+    flutter <-- adminCtrl : 8. JSON data
+    deactivate flutter
+    
+    admin <-- flutter : 9. Download JSON file
+    
+    alt Export Single User
+        admin -> flutter : 10. Select user\nClick Export User
+        activate flutter
+        
+        flutter -> adminCtrl : 11. GET /api/admin/export/user/{id}
+        activate adminCtrl
+        
+        adminCtrl -> adminSvc : 12. exportUserData(userId)
+        activate adminSvc
+        
+        adminSvc -> db : 13. SELECT user data
+        activate db
+        db --> adminSvc : 14. User data
+        deactivate db
+        
+        adminSvc --> adminCtrl : 15. JSON user data
+        deactivate adminSvc
+        deactivate adminCtrl
+        
+        flutter <-- adminCtrl : 16. JSON data
+        deactivate flutter
+        
+        admin <-- flutter : 17. Download user JSON
+    end
+end
+
+' ============ 10. ADMIN PROCESS EXPORT REQUEST ============
+group Admin Process Export Request #LightCoral
+    admin -> flutter : 1. View Export Requests\nClick Process
+    activate flutter
+    
+    flutter -> adminCtrl : 2. POST /api/admin/export-requests/{id}/process
+    activate adminCtrl
+    
+    adminCtrl -> adminSvc : 3. processExportRequest(requestId)
+    activate adminSvc
+    
+    adminSvc -> db : 4. UPDATE export_request (PROCESSING)
+    activate db
+    db --> adminSvc : 5. Updated
+    
+    adminSvc -> db : 6. SELECT user data
+    activate db
+    db --> adminSvc : 7. User data
+    deactivate db
+    
+    adminSvc -> adminSvc : 8. Generate export file
+    
+    adminSvc -> db : 9. UPDATE export_request (COMPLETED)
+    activate db
+    db --> adminSvc : 10. Updated
+    deactivate db
+    deactivate adminSvc
+    deactivate adminCtrl
+    
+    flutter <-- adminCtrl : 11. Updated request
+    deactivate flutter
+    
+    admin <-- flutter : 12. Show completion status
+end
+
+@enduml

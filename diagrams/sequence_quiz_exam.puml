@@ -1,0 +1,320 @@
+@startuml SequenceQuizExam
+skinparam backgroundColor #FEFEFE
+skinparam actorStyle awesome
+
+title Sequence Diagram - Quiz and Exam Flow
+
+' ============ ACTORS ============
+actor Student as student
+actor AI as ai
+
+' ============ PARTICIPANTS ============
+participant "Flutter App" as flutter
+participant "DocumentController" as docCtrl
+participant "AIController" as aiCtrl
+participant "QuizController" as quizCtrl
+participant "ExamController" as examCtrl
+participant "DocumentService" as docSvc
+participant "AIService" as aiSvc
+participant "QuizService" as quizSvc
+participant "ExamService" as examSvc
+participant "GeminiService" as gemini
+participant "MySQL DB" as db
+
+' ============ 1. UPLOAD DOCUMENT ============
+group Upload Document #LightBlue
+    student -> flutter : 1. Select file (PDF/DOCX)\nClick Upload
+    activate flutter
+    
+    flutter -> flutter : 2. Extract text from file
+    flutter -> docCtrl : 3. POST /api/subjects/{id}/documents
+    activate docCtrl
+    
+    docCtrl -> docSvc : 4. upload(subjectId, file)
+    activate docSvc
+    
+    docSvc -> db : 5. INSERT document
+    activate db
+    db --> docSvc : 6. Document created
+    deactivate db
+    deactivate docSvc
+    deactivate docCtrl
+    
+    flutter <-- docSvc : 7. DocumentResponse
+    deactivate flutter
+    
+    student <-- flutter : 8. Upload successful message
+end
+
+' ============ 2. AI SUMMARIZE ============
+group AI Summarize Document #LightGreen
+    student -> flutter : 1. Select document\nClick Summarize
+    activate flutter
+    
+    flutter -> aiCtrl : 2. GET /api/ai/summarize/{docId}
+    activate aiCtrl
+    
+    aiCtrl -> aiSvc : 3. summarize(documentId)
+    activate aiSvc
+    
+    aiSvc -> docSvc : 4. getDocument(documentId)
+    activate docSvc
+    
+    docSvc -> db : 5. SELECT document
+    activate db
+    db --> docSvc : 6. Document
+    deactivate db
+    deactivate docSvc
+    
+    alt Has cached summary
+        aiSvc --> aiSvc : 7. Return cached summary
+    else No cache
+        aiSvc -> gemini : 8. summarizeContent(content)
+        activate gemini
+        
+        gemini -> ai : 9. OpenRouter API\nGemini 2.0 Flash
+        activate ai
+        
+        ai --> gemini : 10. Summary and Keywords
+        deactivate ai
+        
+        gemini --> aiSvc : 11. SummaryResult
+        deactivate gemini
+        
+        aiSvc -> db : 12. UPDATE document SET summary
+        activate db
+        db --> aiSvc : 13. OK
+        deactivate db
+    end
+    
+    aiSvc --> aiCtrl : 14. SummaryResult
+    deactivate aiSvc
+    deactivate aiCtrl
+    
+    flutter <-- aiCtrl : 15. ApiResponse SummaryResult
+    deactivate flutter
+    
+    student <-- flutter : 16. Display summary and keywords
+end
+
+' ============ 3. AI GENERATE FLASHCARD ============
+group AI Generate Flashcards #LightYellow
+    student -> flutter : 1. Select document\nClick Generate Flashcards
+    activate flutter
+    
+    flutter -> aiCtrl : 2. GET /api/ai/flashcards/{docId}?count=8
+    activate aiCtrl
+    
+    aiCtrl -> aiSvc : 3. generateFlashcards(docId, count)
+    activate aiSvc
+    
+    aiSvc -> docSvc : 4. getDocument(documentId)
+    activate docSvc
+    
+    docSvc -> db : 5. SELECT document
+    activate db
+    db --> docSvc : 6. Document
+    deactivate db
+    deactivate docSvc
+    
+    aiSvc -> gemini : 7. generateFlashcards(content, count)
+    activate gemini
+    
+    gemini -> ai : 8. OpenRouter API\nGemini 2.0 Flash
+    activate ai
+    
+    ai --> gemini : 9. JSON flashcards\n(front, back pairs)
+    deactivate ai
+    
+    gemini --> aiSvc : 10. FlashcardResult
+    deactivate gemini
+    
+    aiSvc --> aiCtrl : 11. FlashcardResult
+    deactivate aiSvc
+    deactivate aiCtrl
+    
+    flutter <-- aiCtrl : 12. ApiResponse FlashcardResult
+    deactivate flutter
+    
+    student <-- flutter : 13. Display flashcards\n(flipable cards)
+end
+
+' ============ 4. AI GENERATE QUIZ ============
+group AI Generate Quiz #LightCoral
+    student -> flutter : 1. Select document\nConfigure: questionCount, difficulty\nClick Generate Quiz
+    activate flutter
+    
+    flutter -> quizCtrl : 2. POST /api/quiz/generate
+    activate quizCtrl
+    
+    quizCtrl -> quizSvc : 3. generate(request)
+    activate quizSvc
+    
+    quizSvc -> docSvc : 4. getDocument(documentId)
+    activate docSvc
+    
+    docSvc -> db : 5. SELECT document
+    activate db
+    db --> docSvc : 6. Document
+    deactivate db
+    deactivate docSvc
+    
+    quizSvc -> gemini : 7. generateQuiz(content, count, difficulty)
+    activate gemini
+    
+    gemini -> ai : 8. OpenRouter API\nGemini 2.0 Flash\nQuiz prompt
+    activate ai
+    
+    ai --> gemini : 9. JSON quiz\n(questions, choices, correct, explanation)
+    deactivate ai
+    
+    gemini --> quizSvc : 10. Parsed quiz data
+    deactivate gemini
+    
+    loop For each question
+        quizSvc -> db : 11. INSERT question
+        activate db
+        db --> quizSvc : 12. Question created
+        
+        loop For each choice
+            quizSvc -> db : 13. INSERT choice
+            activate db
+            db --> quizSvc : 14. Choice created
+        end
+    end
+    deactivate db
+    
+    quizSvc --> quizCtrl : 15. QuizResponse
+    deactivate quizSvc
+    deactivate quizCtrl
+    
+    flutter <-- quizCtrl : 16. ApiResponse QuizResponse
+    deactivate flutter
+    
+    student <-- flutter : 17. Display quiz preview
+end
+
+' ============ 5. START EXAM ============
+group Start Exam #LightGray
+    student -> flutter : 1. Select quiz\nClick Start Exam
+    activate flutter
+    
+    flutter -> examCtrl : 2. POST /api/exam/start/{quizId}
+    activate examCtrl
+    
+    examCtrl -> examSvc : 3. start(quizId)
+    activate examSvc
+    
+    examSvc -> db : 4. INSERT exam (IN_PROGRESS)
+    activate db
+    db --> examSvc : 5. Exam created
+    deactivate db
+    deactivate examSvc
+    deactivate examCtrl
+    
+    flutter <-- examCtrl : 6. ApiResponse ExamResponse\n(with questions)
+    deactivate flutter
+    
+    student <-- flutter : 7. Display exam screen\nwith timer
+end
+
+' ============ 6. ANSWER QUESTIONS ============
+group Answer Questions #LightPink
+    loop For each question
+        student -> flutter : 1. Read question\nSelect an answer
+        activate flutter
+        
+        flutter -> flutter : 2. Save answer locally\n(Update state)
+        student <-- flutter : 3. Visual feedback\n(answer selected)
+    end
+end
+
+' ============ 7. SUBMIT EXAM ============
+group Submit Exam #LightCyan
+    student -> flutter : 1. Timer expires\nor Click Submit
+    activate flutter
+    
+    flutter -> examCtrl : 2. POST /api/exam/submit
+    activate examCtrl
+    
+    examCtrl -> examSvc : 3. submit(request)
+    activate examSvc
+    
+    examSvc -> db : 4. SELECT exam, quiz, questions
+    activate db
+    db --> examSvc : 5. Exam data
+    deactivate db
+    
+    loop For each answer
+        examSvc -> examSvc : 6. Check if correct\nCompare selected choice\nwith correct choice
+        
+        examSvc -> db : 7. INSERT exam_answer
+        activate db
+        db --> examSvc : 8. ExamAnswer created
+        deactivate db
+    end
+    
+    examSvc -> examSvc : 9. Calculate score\ncorrectCount / totalQuestions * 10
+    
+    examSvc -> db : 10. UPDATE exam\n(SUBMITTED, score)
+    activate db
+    db --> examSvc : 11. Exam updated
+    deactivate db
+    deactivate examSvc
+    deactivate examCtrl
+    
+    flutter <-- examCtrl : 12. ApiResponse ExamResponse\n(with results)
+    deactivate flutter
+    
+    student <-- flutter : 13. Display result\nScore, correctCount,\ncorrect answers highlighted
+end
+
+' ============ 8. VIEW EXAM RESULT ============
+group View Exam Result #LightSalmon
+    student -> flutter : 1. Click View Result\nfrom history
+    activate flutter
+    
+    flutter -> examCtrl : 2. GET /api/exam/result/{examId}
+    activate examCtrl
+    
+    examCtrl -> examSvc : 3. getResult(examId)
+    activate examSvc
+    
+    examSvc -> db : 4. SELECT exam, answers\nwith questions and choices
+    activate db
+    db --> examSvc : 5. Exam with details
+    deactivate db
+    deactivate examSvc
+    deactivate examCtrl
+    
+    flutter <-- examCtrl : 6. ApiResponse ExamResponse
+    deactivate flutter
+    
+    student <-- flutter : 7. Display detailed result\nwith explanations
+end
+
+' ============ 9. VIEW HISTORY ============
+group View Exam History #LightSteelBlue
+    student -> flutter : 1. Click History
+    activate flutter
+    
+    flutter -> examCtrl : 2. GET /api/exam/history
+    activate examCtrl
+    
+    examCtrl -> examSvc : 3. getHistory()
+    activate examSvc
+    
+    examSvc -> db : 4. SELECT exams WHERE user_id
+    activate db
+    db --> examSvc : 5. List of exams
+    deactivate db
+    deactivate examSvc
+    deactivate examCtrl
+    
+    flutter <-- examCtrl : 6. ApiResponse List<ExamResponse>
+    deactivate flutter
+    
+    student <-- flutter : 7. Display history list\n(sorted by date)
+end
+
+@enduml

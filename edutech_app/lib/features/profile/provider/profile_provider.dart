@@ -1,7 +1,5 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../core/api/api_client.dart';
 import '../../auth/provider/auth_provider.dart';
 
@@ -10,41 +8,15 @@ class ProfileProvider extends ChangeNotifier {
   bool isSaving = false;
   String? error;
   String? success;
-  String? uploadedAvatarUrl;
 
   void _clear() {
     error = null;
     success = null;
-    uploadedAvatarUrl = null;
-  }
-
-  Future<bool> uploadAvatar(AuthProvider auth, XFile image) async {
-    _clear();
-    isSaving = true;
-    notifyListeners();
-    try {
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(image.path, filename: image.name),
-      });
-      final res = await ApiClient.dio.post('/users/avatar', data: formData);
-      final url = res.data['data'] as String;
-      uploadedAvatarUrl = url;
-      auth.updateCurrentUser(avatarUrl: url);
-      success = 'Cập nhật ảnh thành công!';
-      return true;
-    } catch (e) {
-      error = _parseError(e);
-      return false;
-    } finally {
-      isSaving = false;
-      notifyListeners();
-    }
   }
 
   Future<bool> updateProfile(
     AuthProvider auth,
     String fullName, {
-    String? avatarUrl,
     String? gender,
     DateTime? dateOfBirth,
   }) async {
@@ -53,21 +25,19 @@ class ProfileProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final body = <String, dynamic>{'fullName': fullName};
-      if (avatarUrl != null) body['avatarUrl'] = avatarUrl;
       if (gender != null) body['gender'] = gender;
+      String? dateStr;
       if (dateOfBirth != null) {
-        body['dateOfBirth'] = '${dateOfBirth.year}-${dateOfBirth.month.toString().padLeft(2, '0')}-${dateOfBirth.day.toString().padLeft(2, '0')}';
+        dateStr =
+            '${dateOfBirth.year}-${dateOfBirth.month.toString().padLeft(2, '0')}-${dateOfBirth.day.toString().padLeft(2, '0')}';
+        body['dateOfBirth'] = dateStr;
       }
-      final res = await ApiClient.dio.put('/users/profile', data: body);
-      final updated = res.data['data'];
-      if (auth.currentUser != null) {
-        auth.updateCurrentUser(
-          fullName: updated['fullName'] ?? fullName,
-          avatarUrl: updated['avatarUrl'],
-          gender: updated['gender'],
-          dateOfBirth: updated['dateOfBirth'],
-        );
-      }
+      await ApiClient.dio.put('/users/profile', data: body);
+      auth.updateCurrentUser(
+        fullName: fullName,
+        gender: gender,
+        dateOfBirth: dateStr,
+      );
       success = 'Cập nhật thành công!';
       return true;
     } catch (e) {
@@ -79,15 +49,58 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
+  Future<String?> uploadAvatar(AuthProvider auth, dynamic imageFile) async {
+    _clear();
+    isLoading = true;
+    notifyListeners();
+    try {
+      FormData formData;
+
+      if (kIsWeb) {
+        // For web: use bytes directly
+        final bytes = await imageFile.readAsBytes();
+        formData = FormData.fromMap({
+          'file': MultipartFile.fromBytes(bytes, filename: imageFile.name),
+        });
+      } else {
+        // For mobile: use file path
+        formData = FormData.fromMap({
+          'file': await MultipartFile.fromFile(
+            imageFile.path,
+            filename: imageFile.name,
+          ),
+        });
+      }
+
+      final res = await ApiClient.dio.post('/users/avatar', data: formData);
+      final data = res.data;
+      String? avatarUrl;
+      if (data is Map) {
+        avatarUrl = data['data'] as String?;
+      }
+      if (avatarUrl != null) {
+        auth.updateCurrentUser(avatarUrl: avatarUrl);
+      }
+      isLoading = false;
+      notifyListeners();
+      return avatarUrl;
+    } catch (e) {
+      error = _parseError(e);
+      isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<bool> changePassword(String oldPassword, String newPassword) async {
     _clear();
     isSaving = true;
     notifyListeners();
     try {
-      await ApiClient.dio.put('/users/change-password', data: {
-        'oldPassword': oldPassword,
-        'newPassword': newPassword,
-      });
+      await ApiClient.dio.put(
+        '/users/change-password',
+        data: {'oldPassword': oldPassword, 'newPassword': newPassword},
+      );
       success = 'Đổi mật khẩu thành công!';
       return true;
     } catch (e) {
@@ -100,6 +113,15 @@ class ProfileProvider extends ChangeNotifier {
   }
 
   String _parseError(dynamic e) {
+    if (e is DioException) {
+      final data = e.response?.data;
+      if (data is Map) {
+        return data['message']?.toString() ?? 'Đã có lỗi xảy ra';
+      }
+      if (data is String) {
+        return data;
+      }
+    }
     if (e is Exception) {
       final msg = e.toString();
       if (msg.contains('"message":"')) {

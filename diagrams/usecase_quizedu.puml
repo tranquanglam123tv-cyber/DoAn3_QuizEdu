@@ -1,0 +1,153 @@
+@startuml UseCaseQuizEdu
+skinparam backgroundColor #FEFEFE
+skinparam packageStyle rectangle
+
+title Use Case Diagram - QuizEdu System
+
+' ============ ACTORS ============
+actor Student as student
+actor Admin as admin
+actor "AI System" as ai
+actor "Google Auth" as google
+
+' ============ PACKAGES ============
+package "Authentication" {
+    usecase "Register Account" as UC1
+    usecase "Login" as UC2
+    usecase "Google Login" as UC3
+    usecase "Logout" as UC4
+}
+
+package "Subject Management" {
+    usecase "Create Subject" as UC5
+    usecase "View Subjects" as UC6
+    usecase "Update Subject" as UC7
+    usecase "Delete Subject" as UC8
+}
+
+package "Document Management" {
+    usecase "Upload Document" as UC9
+    usecase "View Documents" as UC10
+    usecase "Delete Document" as UC11
+}
+
+package "AI Assistant" {
+    usecase "Summarize Document" as UC12
+    usecase "Generate Flashcards" as UC13
+    usecase "Generate Quiz" as UC14
+}
+
+package "Quiz and Exam" {
+    usecase "Start Exam" as UC15
+    usecase "Answer Questions" as UC16
+    usecase "Submit Exam" as UC17
+    usecase "View Result" as UC18
+    usecase "View History" as UC19
+}
+
+package "Profile Management" {
+    usecase "View Profile" as UC20
+    usecase "Update Profile" as UC21
+    usecase "Upload Avatar" as UC22
+    usecase "Change Password" as UC23
+}
+
+package "Dashboard and Stats" {
+    usecase "View Student Dashboard" as UC24
+    usecase "View Admin Dashboard" as UC25
+    usecase "View Stats by Subject" as UC26
+    usecase "View Stats by Document" as UC27
+}
+
+package "Contact and Support" {
+    usecase "Send Contact" as UC28
+    usecase "View Contacts" as UC29
+    usecase "Respond Contact" as UC30
+}
+
+package "Data Export" {
+    usecase "Request Export" as UC31
+    usecase "Process Export" as UC32
+    usecase "Send Export Email" as UC33
+    usecase "View Export Requests" as UC34
+}
+
+package "User Management" {
+    usecase "View All Users" as UC35
+    usecase "View User Detail" as UC36
+    usecase "Toggle User Lock" as UC37
+}
+
+' ============ RELATIONSHIPS ============
+
+' Student uses Authentication
+student --> UC1
+student --> UC2
+student --> UC3
+student --> UC4
+
+' Student uses Subject Management
+student --> UC5
+student --> UC6
+student --> UC7
+student --> UC8
+
+' Student uses Document Management
+student --> UC9
+student --> UC10
+student --> UC11
+
+' Student uses AI Assistant
+student --> UC12
+student --> UC13
+student --> UC14
+
+' Student uses Quiz and Exam
+student --> UC15
+student --> UC16
+student --> UC17
+student --> UC18
+student --> UC19
+
+' Student uses Profile
+student --> UC20
+student --> UC21
+student --> UC22
+student --> UC23
+
+' Student uses Dashboard
+student --> UC24
+student --> UC26
+student --> UC27
+
+' Student uses Contact
+student --> UC28
+
+' Student uses Export
+student --> UC31
+
+' Admin extends Student
+admin --> UC35
+admin --> UC36
+admin --> UC37
+admin --> UC25
+admin --> UC29
+admin --> UC30
+admin --> UC32
+admin --> UC33
+admin --> UC34
+
+' AI System connections
+ai <-- UC12
+ai <-- UC13
+ai <-- UC14
+
+' Google Auth connections
+google <-- UC3
+
+' Use case relationships
+UC15 ..> UC14 : extends
+UC18 ..> UC17 : includes
+UC16 ..> UC17 : extends
+
+@enduml
