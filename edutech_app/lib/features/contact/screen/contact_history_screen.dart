@@ -86,92 +86,104 @@ class _ContactHistoryScreenState extends State<ContactHistoryScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Padding(
+      builder: (ctx) => Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
         ),
         child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+          ),
           padding: const EdgeInsets.all(24),
           child: Form(
             key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Gửi yêu cầu hỗ trợ',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Họ và tên',
-                    prefixIcon: Icon(Icons.person),
-                    border: OutlineInputBorder(),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Gửi yêu cầu hỗ trợ',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  validator: (v) => v?.isEmpty == true ? 'Nhập họ tên' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: subjectController,
-                  decoration: const InputDecoration(
-                    labelText: 'Tiêu đề',
-                    prefixIcon: Icon(Icons.subject),
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Họ và tên',
+                      prefixIcon: Icon(Icons.person),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) => v?.isEmpty == true ? 'Nhập họ tên' : null,
                   ),
-                  validator: (v) => v?.isEmpty == true ? 'Nhập tiêu đề' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: messageController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Nội dung',
-                    alignLabelWithHint: true,
-                    prefixIcon: Icon(Icons.message),
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: subjectController,
+                    decoration: const InputDecoration(
+                      labelText: 'Tiêu đề',
+                      prefixIcon: Icon(Icons.subject),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) => v?.isEmpty == true ? 'Nhập tiêu đề' : null,
                   ),
-                  validator: (v) => v?.isEmpty == true ? 'Nhập nội dung' : null,
-                ),
-                const SizedBox(height: 20),
-                Consumer<ContactProvider>(
-                  builder: (context, provider, child) {
-                    return ElevatedButton(
-                      onPressed: provider.isLoading
-                          ? null
-                          : () async {
-                              if (formKey.currentState!.validate()) {
-                                final success = await provider.createContact(
-                                  nameController.text,
-                                  subjectController.text,
-                                  messageController.text,
-                                );
-                                if (success && context.mounted) {
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Đã gửi yêu cầu hỗ trợ!'),
-                                      backgroundColor: Colors.green,
-                                    ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: messageController,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Nội dung',
+                      alignLabelWithHint: true,
+                      prefixIcon: Icon(Icons.message),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) => v?.isEmpty == true ? 'Nhập nội dung' : null,
+                  ),
+                  const SizedBox(height: 20),
+                  Consumer<ContactProvider>(
+                    builder: (context, provider, child) {
+                      return ElevatedButton(
+                        onPressed: provider.isLoading
+                            ? null
+                            : () async {
+                                if (formKey.currentState!.validate()) {
+                                  final success = await provider.createContact(
+                                    nameController.text,
+                                    subjectController.text,
+                                    messageController.text,
                                   );
+                                  if (success && ctx.mounted) {
+                                    Navigator.pop(ctx);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Đã gửi yêu cầu hỗ trợ!'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  } else if (!success && ctx.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(provider.error ?? 'Không thể gửi yêu cầu'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
                                 }
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: provider.isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Gửi', style: TextStyle(fontSize: 16)),
-                    );
-                  },
-                ),
-              ],
+                              },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: provider.isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Gửi', style: TextStyle(fontSize: 16)),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -55,16 +55,21 @@ class ContactProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await ApiClient.dio.post('/contact', data: {
+      final res = await ApiClient.dio.post('/contact', data: {
         'userName': userName,
         'subject': subject,
         'message': message,
       });
+      debugPrint('Create contact success: $res');
       await fetchContacts();
       return true;
+    } on DioException catch (e) {
+      debugPrint('Create contact error: ${e.response?.data}');
+      error = _parseError(e);
+      return false;
     } catch (e) {
       debugPrint('Create contact error: $e');
-      error = _parseError(e);
+      error = 'Đã có lỗi xảy ra';
       return false;
     } finally {
       isLoading = false;
